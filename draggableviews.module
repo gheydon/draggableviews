@@ -1,5 +1,5 @@
 <?php
-	include('draggableviews.inc');
+	include_once('draggableviews.inc');
 	
 	/**
 	* Display help and module information
@@ -87,6 +87,15 @@
 	      'template' => 'draggableviews-view-draggabletable-form',
 	      'arguments' => array('form' => NULL),
 	    ),
+	  );
+	}
+	
+	/**
+	 * Impleneting hook_views_api
+	 */
+	function draggableviews_views_api() {
+	  return array(
+	    'api' => 2.0,
 	  );
 	}
 ?>
