@@ -16,13 +16,13 @@
  */
 
   //add tabledrag
-  if (count($tabledrag) > 0) {
-    foreach ($tabledrag as $drag) {
-      drupal_add_tabledrag($tabledrag_table_id, $drag['action'], $drag['relationship'], $drag['group'], $drag['subgroup'], $drag['source'], $drag['hidden'], $drag['limit']);
+  if( count($tabledrag) > 0 ){
+    foreach($tabledrag as $drag){
+      drupal_add_tabledrag($tabledrag_tableId, $drag['action'], $drag['relationship'], $drag['group'], $drag['subgroup'], $drag['source'], $drag['hidden'], $drag['limit']);
     }
   }
 ?>
-<table class="<?php print $class; ?>" id="<?php print $tabledrag_table_id; ?>">
+<table class="<?php print $class; ?>" id="<?php print $tabledrag_tableId; ?>">
   <thead>
     <tr>
       <?php foreach ($header as $field => $label): ?>
