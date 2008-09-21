@@ -9,7 +9,7 @@
 include_once('draggableviews_theme.inc');
 
 /**
- * Build the form
+ * Build the form.
  */
 function draggableviews_view_draggabletable_form($form_state, $view) {
   $form['submit'] = array(
@@ -58,22 +58,19 @@ function draggableviews_view_draggabletable_form_submit($vars) {
   // save structure
   _draggableviews_save_hierarchy($info);
   
-  if (isset($info['hierarchy'])) {
-    
-    // save expanded/collapsed state
-    global $user;
-    
-    foreach ($vars['submit']['#post'] AS $key => $val) {
-      if (ereg('draggableviews_collapsed_', $key)) {
-        $parent_nid = substr($key, 25);
-        db_query("DELETE FROM {draggableviews_collapsed}
-                  WHERE uid=". $user->uid ." AND 
-                  parent_nid=". $parent_nid);
-      
-        db_query("INSERT INTO {draggableviews_collapsed}
-                  (uid, parent_nid, collapsed) VALUES (%d, %d, %d)",
-                  $user->uid, $parent_nid, $val);
-      }
+  // save expanded/collapsed state
+  global $user;
+  
+  foreach ($vars['submit']['#post'] AS $key => $val) {
+    if (ereg('draggableviews_collapsed_', $key)) {
+      $parent_nid = substr($key, 25);
+      db_query("DELETE FROM {draggableviews_collapsed}
+                WHERE uid=". $user->uid ." AND 
+                parent_nid=". $parent_nid);
+
+      db_query("INSERT INTO {draggableviews_collapsed}
+                (uid, parent_nid, collapsed) VALUES (%d, %d, %d)",
+                $user->uid, $parent_nid, $val);
     }
   }
 }
@@ -140,23 +137,20 @@ function _draggableviews_info(&$view) {
     }
     $info['order']['visible'] = strcmp($options['tabledrag_order_visible']['visible'], 'visible') == 0 ? TRUE : FALSE;
     $info['order']['minimum_value'] = _draggableviews_field_get_minimum_value($fields[$field['field']]->content_field);
-  
-    if (count($info['order']['fields']) >= 2 && $options['tabledrag_hierarchy']['parent_field'] != 'none') {
-      $info['hierarchy'] = array(
-        'field' => array(
-          'field_name'        => $options['tabledrag_hierarchy']['parent_field'],
-          'real_field_name' => $fields[$options['tabledrag_hierarchy']['parent_field']]->content_field['field_name'],
-          'field_alias'       => $fields[$options['tabledrag_hierarchy']['parent_field']]->field_alias,
-          'field_type'        => $fields[$options['tabledrag_hierarchy']['parent_field']]->content_field['type'],
-        ),
-        'visible' => strcmp($options['tabledrag_hierarchy_visible']['visible'], 'visible') == 0 ? TRUE : FALSE,
-      );
-    }
   }
-  if (isset($options['tabledrag_types'])) {
-    foreach ($options['tabledrag_types'] as $type) {
-      $info['types'][$type['node_type']] = $type['type'];
-    }
+  if ($options['tabledrag_hierarchy']['parent_field'] != 'none') {
+    $info['hierarchy'] = array(
+      'field' => array(
+        'field_name'        => $options['tabledrag_hierarchy']['parent_field'],
+        'real_field_name' => $fields[$options['tabledrag_hierarchy']['parent_field']]->content_field['field_name'],
+        'field_alias'       => $fields[$options['tabledrag_hierarchy']['parent_field']]->field_alias,
+        'field_type'        => $fields[$options['tabledrag_hierarchy']['parent_field']]->content_field['type'],
+      ),
+      'visible' => strcmp($options['tabledrag_hierarchy_visible']['visible'], 'visible') == 0 ? TRUE : FALSE,
+    );
+  }
+  foreach ($options['tabledrag_types'] as $type) {
+    $info['types'][$type['node_type']] = $type['type'];
   }
   if (isset($options['realtimeedit_enabled_fields'])) {
     foreach ($options['realtimeedit_enabled_fields'] as $field) {
@@ -164,14 +158,10 @@ function _draggableviews_info(&$view) {
     }
   }
   
-  $info['nodes'] = array();
-  
   // loop through all resulting nodes
   foreach ($results as $row) {
-    if (isset($info['order']['fields'])) {
-      foreach ($info['order']['fields'] as $field) {
-        $info['nodes'][$row->nid][$field['field_name']] = $row->{$field['field_alias']};
-      }
+    foreach ($info['order']['fields'] as $field) {
+      $info['nodes'][$row->nid][$field['field_name']] = $row->{$field['field_alias']};
     }
     if (isset($info['hierarchy'])) {
       $info['nodes'][$row->nid][$info['hierarchy']['field']['field_name']] = $row->{$info['hierarchy']['field']['field_alias']};
@@ -274,7 +264,7 @@ function _draggableviews_build_hierarchy(&$info) {
     // B   (3,?)
     //
     // To guaranteer that the ? is always the lowest, we choose
-    // the minimum.
+    // the minimum minus 1 (stupidly cannot be displayed @todo).
     // Due to this it's recommended that all order fields have
     // the same minimum value!
     
@@ -506,9 +496,6 @@ function _draggableviews_calculate_depths(&$info) {
  *   on error FALSE.
  */
 function _draggableviews_get_hierarchy_depth($nid, &$nodes, &$info) {
-
-  if (!isset($info['hierarchy'])) return 0;
-  
   $depth = 0;
   $error = FALSE;
   $temp_nid = $nid;
