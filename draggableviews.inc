@@ -26,8 +26,8 @@ function draggableviews_view_draggabletable_form($form_state, $view) {
  */
 function draggableviews_view_draggabletable_form_submit($vars) {
   // check permissions
-  if (!user_access('administer nodes')) {
-    drupal_set_message(t('You are not allowed to edit/reorder these nodes.'), 'error');
+  if (!user_access('Allow Reordering')) {
+    drupal_set_message(t('You are not allowed to reorder nodes.'), 'error');
     return;
   }
 
@@ -38,6 +38,8 @@ function draggableviews_view_draggabletable_form_submit($vars) {
   $input = $vars['submit']['#post'];
   
   $info = _draggableviews_info($view);
+  
+  if (!isset($info['order'])) return;
   
   
   // loop through all resulting nodes
@@ -121,7 +123,7 @@ function draggableviews_view_draggabletable_form_submit($vars) {
  *     ),
  *   );
  */
-function _draggableviews_info(&$view) {
+function _draggableviews_info(&$view, $prepare_results = TRUE) {
   $options = $view->display['default']->display_options['style_options'];
   $fields  = $view->field;
   $results = $view->result;
@@ -163,18 +165,32 @@ function _draggableviews_info(&$view) {
       $info['realtimeedit'][$field['field']] = TRUE;
     }
   }
+  if ($info['hierarchy']) {
+    $info['expand_links'] = array(
+      'show'              => strcmp($options['tabledrag_expand']['expand_links'], 'expand_links') == 0 ? TRUE : FALSE,
+      'default_collapsed' => strcmp($options['tabledrag_expand']['collapsed'], 'collapsed') == 0 ? TRUE : FALSE,
+    );
+  }
   
   $info['nodes'] = array();
   
-  // loop through all resulting nodes
-  foreach ($results as $row) {
-    if (isset($info['order']['fields'])) {
-      foreach ($info['order']['fields'] as $field) {
-        $info['nodes'][$row->nid][$field['field_name']] = $row->{$field['field_alias']};
+  if ($prepare_results) {
+  
+    // loop through all resulting nodes
+    foreach ($results as $row) {
+      if (isset($info['order']['fields'])) {
+        foreach ($info['order']['fields'] as $field) {
+          if (empty($field['field_alias'])) {
+            drupal_set_message(t("An error occured. Please send this output to the maintainer:") .'<br>'. print_r($info, true), 'error', FALSE);
+          }
+          else {
+            $info['nodes'][$row->nid][$field['field_name']] = $row->{$field['field_alias']};
+          }
+        }
       }
-    }
-    if (isset($info['hierarchy'])) {
-      $info['nodes'][$row->nid][$info['hierarchy']['field']['field_name']] = $row->{$info['hierarchy']['field']['field_alias']};
+      if (isset($info['hierarchy'])) {
+        $info['nodes'][$row->nid][$info['hierarchy']['field']['field_name']] = $row->{$info['hierarchy']['field']['field_alias']};
+      }
     }
   }
   
@@ -337,6 +353,9 @@ function _draggableviews_rebuild_hierarchy(&$info) {
 
 /**
  * Detect and repair order collisions
+ * 
+ * @return
+ *   TRUE if no collision detected
  */
 function _draggableviews_detect_order_collisions(&$info) {
 
@@ -350,10 +369,10 @@ function _draggableviews_detect_order_collisions(&$info) {
   //     should be possible for new nodes to default on top
   //     without order collisions
   //  2) @todo The last value should not be used...
-  //  3) A order value should only be used once per depth
+  //  3) A order value should only be used once per parent
   
   // array(
-  //   depth => array(order1, ..),
+  //   parent => array(order1, ..),
   //   ..
   // )
   $order = array();
@@ -363,18 +382,20 @@ function _draggableviews_detect_order_collisions(&$info) {
   // loop through all nodes
   foreach ($nodes as $nid => $prop) {
     
-    $depth = $prop['depth'];
+    $parent = $info['hierarchy'] ? $prop[$info['hierarchy']['field']['field_name']] : 0;
+    
+    $order_field_value = &$nodes[$nid][$info['order']['fields'][$prop['depth']]['field_name']];
     
     $begin_search = TRUE;
     
     // make sure that the minimum value cannot be used
-    if (!is_array($order[$depth])) $order[$depth] = array($min_value);
+    if (!is_array($order[$parent])) $order[$parent] = array($min_value);
     
     // first try to keep current value
-    $tmp_order = $prop[$info['order']['fields'][$depth]['field_name']];
+    $tmp_order = $order_field_value;
     
-    while (is_numeric(array_search($tmp_order, $order[$depth]))) {
-      // if there already exists an order value for this depth
+    while (is_numeric(array_search($tmp_order, $order[$parent]))) {
+      // if there already exists an order value for this depth/parent
       // we have to find another one.
       // Try to find a free order:
       
@@ -392,9 +413,9 @@ function _draggableviews_detect_order_collisions(&$info) {
       $collision = TRUE;
     }
     
-    $order[$depth] = array_merge(array($tmp_order), $order[$depth]);
+    $order[$parent] = array_merge(array($tmp_order), $order[$parent]);
     
-    $nodes[$nid][$info['order']['fields'][$depth]['field_name']] = $tmp_order;
+    $order_field_value = $tmp_order;
   }
   
   return !$collision;
@@ -730,18 +751,3 @@ function _draggableviews_filter_fields($types = array(), $handlers) {
   }
   return $available_fields;
 }
-
-/*
- * Implementing hook_views_pre_view
- */
-/*
-function draggableviews_views_pre_view($view, $display_id, $view_args){
-  // check  if view uses our style plugin
-  if( $view->display[$display_id]->handler->get_option('style_plugin') == 'draggabletable' ){
-  	
-    // Add the node id field if it's not yet present.
-    if( !array_key_exists('nid', $view->display[$display_id]->display_options['fields']) ){
-      $view->add_item($display_id, 'field', 'node', 'nid');
-    }
-  }
-}*/
