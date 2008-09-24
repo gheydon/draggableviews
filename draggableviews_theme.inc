@@ -342,6 +342,6 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
   $vars['view'] = $output;
 
   
-  //render submit form
-  $vars['submit_form'] = drupal_render($vars['form']);
+  // render submit form
+  $vars['submit_form'] = user_access('Allow Reordering') ? drupal_render($vars['form']) : '';
 }
