@@ -2,7 +2,6 @@
 name = Draggable views
 description = Make views draggable
 dependencies[] = views
-dependencies[] = content
 core = 6.x
 
 ; Information added by drupal.org packaging script on 2008-09-21

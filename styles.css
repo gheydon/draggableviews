@@ -22,10 +22,3 @@
   
   cursor: pointer;
 }
-
-.views-field-edit-node a{
-  background-image: url("graphics/icon_edit2.gif");
-  width: 18px;
-  height: 20px;
-  display: inline-block;
-}
