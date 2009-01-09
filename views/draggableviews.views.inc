@@ -60,7 +60,7 @@ function draggableviews_views_handlers() {
 function draggableviews_views_data() {
   $data = array();
 
-  for ($i = 0; $i < 3; $i++) {
+  for ($i = 0; $i < variable_get('draggableviews_nmbr_values', 3); $i++) {
     $data['draggableviews_structure'.$i]['table'] = array(
       'group' => t('Draggableviews'),
       'join' => array(
@@ -99,7 +99,7 @@ function draggableviews_views_data() {
 }
 
 function draggableviews_views_query_alter(&$view, &$query) {
-  for ($i = 0; $i < 3; $i++) {
+  for ($i = 0; $i < variable_get('draggableviews_nmbr_values', 3); $i++) {
     if (isset($query->table_queue['draggableviews_structure'. $i])) {
       $query->table_queue['draggableviews_structure'. $i]['join']->extra[] = array(
           'field' => 'vid',
