@@ -16,7 +16,6 @@ class draggableviews_handler_auto {
   	$this->field_name = $field_name;
   	$this->view       = $view;
   	
-  	// TODO: besser machen
   	$this->delta = $this->view->field[$field_name]->definition['draggableviews_delta'];
   }
   
