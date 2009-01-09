@@ -15,7 +15,7 @@ function draggableviews_views_plugins() {
 
     'style' => array(
       'draggabletable' => array(
-        'path' => drupal_get_path('module', 'draggableviews') . '/views',
+        'path' => drupal_get_path('module', 'draggableviews') .'/views',
         'title' => t('Draggable Table'),
         'help' => t('Displays rows in a table and makes them draggable.'),
         'handler' => 'draggableviews_plugin_style_draggabletable',
@@ -37,7 +37,7 @@ function draggableviews_views_plugins() {
 function draggableviews_views_handlers() {
   return array(
     'info' => array(
-      'path' => drupal_get_path('module', 'draggableviews') . '/views/handlers',
+      'path' => drupal_get_path('module', 'draggableviews') .'/views/handlers',
     ),
     'handlers' => array(
 
@@ -55,13 +55,13 @@ function draggableviews_views_handlers() {
 }
 
 /**
- * Implementing of hook_views_data.
+ * Implementing hook_views_data.
  */
 function draggableviews_views_data() {
   $data = array();
 
   for ($i = 0; $i < variable_get('draggableviews_nmbr_values', 3); $i++) {
-    $data['draggableviews_structure'.$i]['table'] = array(
+    $data['draggableviews_structure'. $i]['table'] = array(
       'group' => t('Draggableviews'),
       'join' => array(
         'node' => array(

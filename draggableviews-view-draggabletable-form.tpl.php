@@ -11,4 +11,3 @@
 print $view;
 // submit form
 print $submit_form;
-?>

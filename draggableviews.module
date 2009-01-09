@@ -37,7 +37,7 @@ function draggableviews_admin() {
     '#maxlength' => 4,
     '#description' => t('The number of draggableviews value fields that will be generated'),
     '#required' => TRUE,
-    '#prefix' => 'The setting above will not take in effect until the views cache gets cleared!',
+    '#prefix' => 'The setting above will not take effect until the views cache gets cleared!',
   );
 
 
@@ -67,8 +67,8 @@ function draggableviews_menu() {
     'page arguments' => array('draggableviews_admin'),
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
-   );
-   
+  );
+  
   return $items;
 }
 
@@ -80,7 +80,7 @@ function draggableviews_discover_handlers($filter_handler = FALSE) {
   $cache = array();
   // Get implementation definitions from all modules.
   foreach (module_implements('draggableviews_handlers') as $module) {
-    $function = $module . '_draggableviews_handlers';
+    $function = $module .'_draggableviews_handlers';
     $result = $function();
     if (!is_array($result)) {
       continue;
@@ -114,10 +114,9 @@ function draggableviews_discover_handlers($filter_handler = FALSE) {
  */
 function draggableviews_get_handlers_list() {
   $handlers = draggableviews_discover_handlers();
-  foreach($handlers as $handler => $def) {
+  foreach ($handlers as $handler => $def) {
     $list[$handler] = $def['title'];
   }
-  
   return $list;
 }
 
@@ -163,6 +162,6 @@ function draggableviews_theme() {
 function draggableviews_views_api() {
   return array(
     'api' => 2.0,
-    'path' => drupal_get_path('module', 'draggableviews') . '/views',
+    'path' => drupal_get_path('module', 'draggableviews') .'/views',
   );
 }

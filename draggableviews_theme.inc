@@ -62,7 +62,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     if ($active == $field) {
       $vars['fields'][$field] .= ' active';
     }
-    
+
     // Render each field into its appropriate column.
     foreach ($result as $num => $row) {
       if (!empty($fields[$field]) && empty($fields[$field]->options['exclude'])) {
@@ -93,49 +93,37 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     drupal_add_js('misc/tableheader.js');
     $vars['class'] .= " sticky-enabled";
   }
-  
-  
-  
 
-  /*********************
-   * TABLE_DRAG OUTPUT *
-  **********************/
-  
-  $error = FALSE;
-  
+
+  // Draggableviews output begin
+
   $info = _draggableviews_info($view);
-  
+
   if (!isset($info['order'])) return;
-  
+
   // analyze structure (also calculates depths)
   if (!_draggableviews_analyze_structure($info)) {
-    // the structure is broken
-    if (_draggableviews_rebuild_hierarchy($info)) {
-      // the structure has been repaired
-    } else {
-      // the structure could not be repaired
-    }
     return;
   }
-  
+
   // loop through all rows the view returned
   foreach ($vars['rows'] as $i => $row) {
-  
+
     $nid = $result[$i]->nid;
-    
+
     // build indentation (as tabledrag requires)
     $indentation = theme('indentation', $info['nodes'][$nid]['depth']);
-    
+
     if (user_access('Allow Reordering')) {
-    
+
       // get node object
       $node = node_load(array('nid' => $nid));
-      
+
       if (isset($info['types'][$node->type])) {
         // set node type specification, if available (e.g. tabledrag-root)
         $vars['tabledrag_type'][$i] = 'tabledrag-'. $info['types'][$node->type];
       }
-      
+
       // Tabledrag needs all concerned fields to be input elements.
       // The values of the input elements will be changed by tabledrag while
       // dragging the rows. As we want to use these values we need to
@@ -148,36 +136,35 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
       // The remaining fields are not used by tabledrag. But - depending
       // on the depth - one of them will simulate the first order field.
       // (This behavior is based on the fact that tabledrag handles each depth as it was the only one.)
-      
+
       // this for loop should prevent copy->paste'ing code
       for ($modus = 'hierarchy'; $modus !== FALSE ; $modus = ($modus == 'hierarchy' ? 'order' : FALSE)) {
-      
+
         if (isset($info[$modus])) {
           if ($modus == 'hierarchy') {
             $value = $info['nodes'][$nid]['parent'];
-            
+
             // get the field that should be rendered
             $field = &$info['hierarchy']['field'];
           }
           else {
             // get depth of current field
             $depth = $info['nodes'][$node->nid]['depth'];
-            
+
             $value = $info['nodes'][$nid]['order'][$depth];
-            
+
             // get the field that should be rendered
             $field = &$info['order']['fields'][0];
           }
-          
+
           // get the form element
           $form_element = $field['handler']->get_form_element($value, array('field_name' => $field['field_name'] .'_'. $nid, 'class' => $field['field_name']));
-          
+
           // render new form element
           $vars['rows'][$i][$field['field_name']] = drupal_render($form_element);
         }
       }
-      
-      
+
       if (isset($info['hierarchy'])) {
         // append the node id as a hidden field. This is needed
         // because tabledrag would not know what id to assign when
@@ -192,25 +179,24 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
         $vars['rows'][$i][$field['field_name']] .= drupal_render($hidden_nid);
       }
     }
-    
+
     if (isset($info['hierarchy'])) {
       // put indentation in front of first field
       $first_field = each($vars['rows'][$i]);
       $vars['rows'][$i][$first_field['key']] = $indentation . $vars['rows'][$i][$first_field['key']];
     }
-    
+
     // Let extension modules alter the output
     foreach (module_implements('draggableviews_row_alter') as $module) {
-      $function = $module . '_draggableviews_row_alter';
+      $function = $module .'_draggableviews_row_alter';
       $function($vars['rows'][$i], $nid, $info, $view);
     }
   }
-  
+
   // output data
   $vars['tabledrag_table_id'] = 'draggableview_'. $view->name;
- 
+
   if (user_access('Allow Reordering')) {
-  
     // prepare tabledrag settings for output
     $vars['tabledrag'] = array();
     if (isset($info['order'])) {
@@ -242,35 +228,32 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
 
 function template_preprocess_draggableviews_view_draggabletable_form($vars) {
   global $user;
-  
+
   // get view object
   $view_obj = $vars['form']['#parameters'][2];
   // get structured info array
   $info     = _draggableviews_info($view_obj->view, FALSE, TRUE, FALSE);
-  
+
   if (user_access('Allow Reordering') && isset($info['hierarchy'])) {
-  
     // fetch expand information from database
     $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid = %d", $user->uid);
     $states = array();
     while ($state = db_fetch_object($result)) {
       $states[$state->parent_nid] = $state->collapsed;
     }
-    
+
     // check if "expand" links should be shown
     if ($info['expand_links']['show']) {
-    
       drupal_add_js(drupal_get_path('module', 'draggableviews') .'/draggableviews.js');
-      
+
       if (empty($states)) {
         // let js know whether child nodes should be expanded or not
         drupal_add_js(array(
                         'draggableviews' => array(
-                          'expand_default' =>  $options['tabledrag_expand']['collapsed']
-                                               ? 1 : 0,
-                         ),
-                       ),
-                       'setting');
+                          'expand_default' =>  $options['tabledrag_expand']['collapsed'] ? 1 : 0,
+                        ),
+                      ),
+                      'setting');
       }
       else {
         drupal_add_js(array(
@@ -280,23 +263,21 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
                       ),
                       'setting');
       }
-      
+
       drupal_add_css(drupal_get_path('module', 'draggableviews') .'/styles.css');
     }
   }
-  
-  
+
   //theme view
   $sets = $view_obj->render_grouping($view_obj->view->result, $options['grouping']);
-  
+
   $output = '';
   foreach ($sets as $title => $records) {
     $output .= theme($view_obj->theme_functions(), $view_obj->view, $options, $records, $title);
   }
-  
+
   $vars['view'] = $output;
 
-  
   // render submit form
   $vars['submit_form'] = user_access('Allow Reordering') ? drupal_render($vars['form']) : '';
 }

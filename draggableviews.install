@@ -38,7 +38,7 @@ function draggableviews_schema() {
     ),
     'primary key' => array('uid', 'parent_nid'),
   );
-  
+
   $schema['draggableviews_structure'] = array(
     'description' => t('The table saves the order settings of an draggableview.'),
     'fields' => array(

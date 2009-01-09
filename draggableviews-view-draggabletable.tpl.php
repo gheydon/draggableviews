@@ -1,7 +1,7 @@
 <?php
 // $Id$
 /**
- * @file views-view-draggabletable.tpl.php
+ * @file
  * Template to display a view as a draggable table.
  *
  * - $header: An array of header labels keyed by field id.
@@ -34,7 +34,8 @@
   </thead>
   <tbody>
     <?php foreach ($rows as $count => $row): ?>
-      <tr class="draggable <?php print ($count % 2 == 1) ? 'even' : 'odd';?><? if($tabledrag_type[$count]) print ' '.$tabledrag_type[$count]; ?>">
+      <?php $zebra = ($count % 2 == 1) ? 'even' : 'odd'; ?>
+      <tr class="draggable <?php print $zebra; ?><? if ($tabledrag_type[$count]) print ' '. $tabledrag_type[$count]; ?>">
         <?php foreach ($row as $field => $content): ?>
           <td class="views-field views-field-<?php print $fields[$field]; ?>"><?php
             print $content;

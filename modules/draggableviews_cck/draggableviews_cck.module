@@ -5,7 +5,7 @@
  * @file
  * Draggableviews CCK module provides CCK-support for order fields.
  */
- 
+
 /**
  * Display help and module information
  * @param path which path of the site we're displaying help
