@@ -46,7 +46,7 @@ function draggableviews_schema() {
         'description' => t('Makes the order unique for each view.'),
         'type' => 'int',
         'unsigned' => TRUE,
-        'not null' => FALSE,
+        'not null' => TRUE,
         'default' => 0,
       ),
       'nid' => array(
