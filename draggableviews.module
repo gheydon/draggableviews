@@ -125,11 +125,11 @@ function draggableviews_get_handlers_list() {
  */
 function draggableviews_draggableviews_handlers() {
   return array(
-    'auto' => array(
-      'file' => 'implementations/draggableviews_handler_auto.inc',
-      'title' => t('Auto'),
+    'native' => array(
+      'file' => 'implementations/draggableviews_handler_native.inc',
+      'title' => t('Native'),
       'description' => 'Storage of structure done by draggableviews',
-      'handler' => 'draggableviews_handler_auto',
+      'handler' => 'draggableviews_handler_native',
     ),
   );
 }
