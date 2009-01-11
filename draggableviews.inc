@@ -217,14 +217,12 @@ function _draggableviews_init_handler($field, &$view) {
  *   FALSE if structure is broken
  */
 function _draggableviews_analyze_structure(&$info) {
-  $error = FALSE;
-
   // calculate depth of all nodes.
   // If one of the parents of a node is broken,
   // the return will be FALSE
   if (!_draggableviews_calculate_depths($info)) {
     //drupal_set_message(t('Draggableviews: Detected broken parents.'), 'error');
-    $error = TRUE;
+    return FALSE;
   }
 
   // Detect order collisions and solve them
@@ -232,7 +230,7 @@ function _draggableviews_analyze_structure(&$info) {
   // twice the return will be FALSE.
   if (!_draggableviews_detect_order_collisions($info)) {
     //drupal_set_message(t('Draggableviews: Detected order collisions.'), 'error');
-    $error = TRUE;
+    return FALSE;
   }
 
   foreach ($info['nodes'] as $nid => $prop) {
@@ -241,11 +239,11 @@ function _draggableviews_analyze_structure(&$info) {
     // parents order value. Otherwise the return will be FALSE.
     if (_draggableviews_check_order($nid, $info) == FALSE) {
       //drupal_set_message(t('Draggableviews: Detected ordering errors.'), 'error');
-      $error = TRUE;
+      return FALSE;
     }
   }
 
-  return !$error;
+  return TRUE;
 }
 
 /**
