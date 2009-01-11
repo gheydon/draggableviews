@@ -108,12 +108,12 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         'field' => array(
           '#type' => 'select',
           '#options' => $options,
-          '#value' => $current['tabledrag_order'][$i]['field'] ? $current['tabledrag_order'][$i]['field'] : $first_option['key'],
+          '#value' => isset($current['tabledrag_order'][$i]['field']) ? $current['tabledrag_order'][$i]['field'] : $first_option['key'],
         ),
         'handler' => array(
           '#type' => 'select',
           '#options' => $draggableviews_handlers,
-          '#value' => $current['tabledrag_order'][$i]['handler'] ? $current['tabledrag_order'][$i]['handler'] : $first_handler['key'],
+          '#value' => isset($current['tabledrag_order'][$i]['handler']) ? $current['tabledrag_order'][$i]['handler'] : $first_handler['key'],
         ),
         'del' => array(
           '#type' => 'button',
@@ -150,7 +150,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       'handler' => array(
         '#type' => 'select',
         '#options' => $draggableviews_handlers,
-        '#value' => $current['tabledrag_order'][$i]['handler'] ? $current['tabledrag_order'][$i]['handler'] : $first_handler['key'],
+        '#value' => isset($current['tabledrag_hierarchy']) ? $current['tabledrag_hierarchy']['handler'] : $first_handler['key'],
       ),
     );
 
