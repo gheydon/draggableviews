@@ -6,7 +6,7 @@
  */
 
 /**
- * A handler to provide proper displays for time units (i.e. calendar weeks).
+ * A handler.
  */
 class views_handler_field_draggableviews_structure extends views_handler_field {
 
