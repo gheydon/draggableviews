@@ -145,12 +145,12 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       'field' => array(
         '#type' => 'select',
         '#options' => array('none' => 'none') + _draggableviews_filter_fields(array('nodereference'), $handlers),
-        '#value' => isset($current['tabledrag_hierarchy']) ? $current['tabledrag_hierarchy']['field'] : 'none',
+        '#value' => isset($current['tabledrag_hierarchy']['field']) ? $current['tabledrag_hierarchy']['field'] : 'none',
       ),
       'handler' => array(
         '#type' => 'select',
         '#options' => $draggableviews_handlers,
-        '#value' => isset($current['tabledrag_hierarchy']) ? $current['tabledrag_hierarchy']['handler'] : $first_handler['key'],
+        '#value' => isset($current['tabledrag_hierarchy']['handler']) ? $current['tabledrag_hierarchy']['handler'] : $first_handler['key'],
       ),
     );
 
@@ -177,12 +177,12 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         'node_type' => array(
           '#type' => 'select',
           '#options' => $node_types,
-          '#value' => $current['tabledrag_types'][$i]['node_type'] ? $current['tabledrag_types'][$i]['node_type'] : $node_types[0],
+          '#value' => isset($current['tabledrag_types'][$i]['node_type']) ? $current['tabledrag_types'][$i]['node_type'] : $node_types[0],
         ),
         'type' => array(
           '#type' => 'select',
           '#options' => array('root' => 'root', 'leaf' => 'leaf'),
-          '#value' => $current['tabledrag_types'][$i]['type'] ? $current['tabledrag_types'][$i]['type'] : $node_types[0],
+          '#value' => isset($current['tabledrag_types'][$i]['type']) ? $current['tabledrag_types'][$i]['type'] : 'root',
         ),
         'tabledrag_type_del_button' => array(
           '#type' => 'button',
