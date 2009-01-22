@@ -1,6 +1,6 @@
 ; $Id$
-name = Draggable views
-description = Make views draggable
+name = DraggableViews
+description = Makes Views draggable
 dependencies[] = views
 core = 6.x
 
