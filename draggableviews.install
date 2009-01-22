@@ -62,7 +62,7 @@ function draggableviews_schema() {
         'not null' => TRUE,
       ),
       'value' => array(
-        'description' => t('The order.'),
+        'description' => t('The value.'),
         'type' => 'int',
         'unsigned' => FALSE,
         'not null' => TRUE,
@@ -86,4 +86,14 @@ function draggableviews_install() {
  */
 function draggableviews_uninstall() {
   drupal_uninstall_schema('draggableviews');
+}
+
+/**
+ * Add a schema for structure information
+ */
+function draggableviews_update_6300() {
+  $ret = array();
+  $schemas = draggableviews_schema();
+  db_create_table($ret, 'draggableviews_structure', $schemas['draggableviews_structure']);
+  return $ret;
 }
