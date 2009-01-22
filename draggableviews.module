@@ -76,7 +76,7 @@ function draggableviews_menu() {
  * Discover all Implementations for draggableviews
  *
  */
-function draggableviews_discover_handlers($filter_handler = FALSE) {
+function draggableviews_discover_handlers($filter_handler = NULL) {
   $cache = array();
   // Get implementation definitions from all modules.
   foreach (module_implements('draggableviews_handlers') as $module) {
@@ -91,20 +91,25 @@ function draggableviews_discover_handlers($filter_handler = FALSE) {
     foreach ($result as $handler => $def) {
       if (!isset($def['path'])) {
         $def['path'] = $path;
-      } 
+      }
       if (!isset($def['file'])) {
         $def['file'] = "$handler.inc";
       }
       if (!isset($def['handler'])) {
-        $def['handler'] = $implementation;
+        $def['handler'] = 'draggableviews_handler_'.$handler;
       }
       // merge the new data in
       $cache[$handler] = $def;
     }
   }
   
-  if ($filter_handler) {
-    return $cache[$filter_handler];
+  if (isset($filter_handler)) {
+    if (isset($cache[$filter_handler])) {
+      return $cache[$filter_handler];
+    }
+    else {
+      return FALSE;
+    }
   }
   return $cache;
 }
