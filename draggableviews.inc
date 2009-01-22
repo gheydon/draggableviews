@@ -138,36 +138,51 @@ function _draggableviews_info(&$view, $prepare_fields = TRUE, $prepare_options =
   $info = array();
   if ($prepare_fields && isset($options['tabledrag_order'])) {
     foreach ($options['tabledrag_order'] as $field) {
-      $info['order']['fields'][] = array(
-        'handler' => _draggableviews_init_handler($field, $view),
-        'field_name' => $field['field'],
-        'field_alias' => $fields[$field['field']]->field_alias,
-      );
+      if ($handler = _draggableviews_init_handler($field, $view)) {
+        $info['order']['fields'][] = array(
+          'handler' => $handler,
+          'field_name' => $field['field'],
+          'field_alias' => $fields[$field['field']]->field_alias,
+        );
+      }
+      else {
+      	drupal_set_message(t('Draggableviews: Handler <i>') . $field['handler'] . t('</i> could not be found.'), 'error');
+        unset($info['order']);
+        return $info;
+      }
     }
     $info['order']['visible'] = strcmp($options['tabledrag_order_visible']['visible'], 'visible') == 0 ? TRUE : FALSE;
     $info['order']['minimum_value'] = $info['order']['fields'][0]['handler']->get_minimum_value();
 
     if (count($info['order']['fields']) >= 2 && $options['tabledrag_hierarchy']['field'] != 'none') {
-      $info['hierarchy'] = array(
-        'field' => array(
-           'handler' => _draggableviews_init_handler($options['tabledrag_hierarchy'], $view),
-           'field_name' => $options['tabledrag_hierarchy']['field'],
-           'field_alias' => $fields[$options['tabledrag_hierarchy']['field']]->field_alias,
-        ),
-        'visible' => strcmp($options['tabledrag_hierarchy_visible']['visible'], 'visible') == 0 ? TRUE : FALSE,
-      );
+      if ($handler = _draggableviews_init_handler($options['tabledrag_hierarchy'], $view)) {
+        $info['hierarchy'] = array(
+          'field' => array(
+             'handler' => $handler,
+             'field_name' => $options['tabledrag_hierarchy']['field'],
+             'field_alias' => $fields[$options['tabledrag_hierarchy']['field']]->field_alias,
+          ),
+          'visible' => strcmp($options['tabledrag_hierarchy_visible']['visible'], 'visible') == 0 ? TRUE : FALSE,
+        );
+
+        if ($prepare_fields && isset($options['tabledrag_types'])) {
+          foreach ($options['tabledrag_types'] as $type) {
+            $info['types'][$type['node_type']] = $type['type'];
+          }
+        }
+
+        if ($prepare_options) {
+          $info['expand_links'] = array(
+            'show'              => strcmp($options['tabledrag_expand']['expand_links'], 'expand_links') == 0 ? TRUE : FALSE,
+            'default_collapsed' => strcmp($options['tabledrag_expand']['collapsed'], 'collapsed') == 0 ? TRUE : FALSE,
+          );
+        }
+      }
+      else {
+      	drupal_set_message(t('Draggableviews: Handler <i>') . $field['handler'] . t('</i> could not be found.'), 'error');
+        unset($info['hierarchy']);
+      }
     }
-  }
-  if ($prepare_fields && isset($options['tabledrag_types'])) {
-    foreach ($options['tabledrag_types'] as $type) {
-      $info['types'][$type['node_type']] = $type['type'];
-    }
-  }
-  if ($prepare_options && $info['hierarchy']) {
-    $info['expand_links'] = array(
-      'show'              => strcmp($options['tabledrag_expand']['expand_links'], 'expand_links') == 0 ? TRUE : FALSE,
-      'default_collapsed' => strcmp($options['tabledrag_expand']['collapsed'], 'collapsed') == 0 ? TRUE : FALSE,
-    );
   }
 
   $info['nodes'] = array();
@@ -199,12 +214,16 @@ function _draggableviews_info(&$view, $prepare_fields = TRUE, $prepare_options =
  *   An instance of the handler
  */
 function _draggableviews_init_handler($field, &$view) {
-  $handler_info = draggableviews_discover_handlers($field['handler']);
-  require_once($handler_info['path'] .'/'. $handler_info['file']);
-  $handler = new $handler_info['handler'];
-  $handler->init($field['field'], $view);
+  if (($handler_info = draggableviews_discover_handlers($field['handler'])) && file_exists($handler_info['path'] .'/'. $handler_info['file'])) {
+    require_once($handler_info['path'] .'/'. $handler_info['file']);
+    $handler = new $handler_info['handler'];
+    $handler->init($field['field'], $view);
 
-  return $handler;
+    return $handler;
+  }
+  else {
+    return FALSE;
+  }
 }
 
 /**
@@ -221,7 +240,6 @@ function _draggableviews_analyze_structure(&$info) {
   // If one of the parents of a node is broken,
   // the return will be FALSE
   if (!_draggableviews_calculate_depths($info)) {
-    //drupal_set_message(t('Draggableviews: Detected broken parents.'), 'error');
     return FALSE;
   }
 
@@ -229,7 +247,6 @@ function _draggableviews_analyze_structure(&$info) {
   // If one order of the same depth is found
   // twice the return will be FALSE.
   if (!_draggableviews_detect_order_collisions($info)) {
-    //drupal_set_message(t('Draggableviews: Detected order collisions.'), 'error');
     return FALSE;
   }
 
@@ -238,7 +255,6 @@ function _draggableviews_analyze_structure(&$info) {
     // The nodes order value has to equal with the
     // parents order value. Otherwise the return will be FALSE.
     if (_draggableviews_check_order($nid, $info) == FALSE) {
-      //drupal_set_message(t('Draggableviews: Detected ordering errors.'), 'error');
       return FALSE;
     }
   }
@@ -275,8 +291,6 @@ function _draggableviews_build_hierarchy(&$info) {
 
       // We gracefully sidestep the order-loop
       $depth = -1;
-
-      drupal_set_message("Draggableviews: An error was detected. The structure has been repaired.");
     }
 
     // Let's take a look at the following expample, to understand
@@ -529,7 +543,7 @@ function _draggableviews_check_order($nid, &$info) {
     }
 
     if (isset($info['hierarchy']) && $i > 0) {
-      if (!($temp_nid = $nodes[$temp_nid]['parent'])) {
+      if (!(isset($nodes[$temp_nid]) && ($temp_nid = $nodes[$temp_nid]['parent']))) {
         // this line should never be reached assumed the depth
         // was calculated correctly.
         drupal_set_message(t('Undefined State called in draggableviews_build_hierarchy(..)'), 'error');
