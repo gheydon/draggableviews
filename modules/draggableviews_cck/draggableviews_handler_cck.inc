@@ -21,7 +21,8 @@ class draggableviews_handler_cck {
 
     $this->real_field_name = $this->fields[$field_name]->content_field['field_name'];
     $this->field_type      = $this->fields[$field_name]->content_field['type'];
-    $this->minimum_value   = 0;
+
+    $this->allowed_values  = content_allowed_values($this->field->content_field);
   }
 
   function save($nid, $value) {
@@ -72,7 +73,7 @@ class draggableviews_handler_cck {
           '#value' => $value,
           // slice out the first and the last element, so we make it possible
           // that new nodes may appear on the very top or the very bottom
-          '#options' => array_slice(content_allowed_values($this->field->content_field), 1, -1, TRUE),
+          '#options' => array_slice($this->allowed_values, 1, -1, TRUE),
           '#attributes' => array('class' => $attributes['class']),
         );
         break;
@@ -89,6 +90,6 @@ class draggableviews_handler_cck {
   }
 
   function get_minimum_value() {
-    return 1;
+    return key($this->allowed_values);
   }
 }
