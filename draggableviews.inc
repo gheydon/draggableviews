@@ -188,15 +188,25 @@ function _draggableviews_info(&$view, $prepare_fields = TRUE, $prepare_options =
   $info['nodes'] = array();
 
   if ($prepare_results && $prepare_fields && $options['tabledrag_order']) {
+    $new_nodes = array();
     // loop through all resulting nodes
     foreach ($results as $row) {
+      $node = array();
       foreach ($info['order']['fields'] as $field) {
-        $info['nodes'][$row->nid]['order'][] = $row->{$field['field_alias']};
+        $node[$row->nid]['order'][] = $row->{$field['field_alias']};
       }
       if (isset($info['hierarchy'])) {
-        $info['nodes'][$row->nid]['parent'] = $row->{$info['hierarchy']['field']['field_alias']};
+        $node[$row->nid]['parent'] = $row->{$info['hierarchy']['field']['field_alias']};
+      }
+
+      if ($node[$row->nid]['order'][0] == NULL || $node[$row->nid]['order'][0] <= $info['order']['minimum_value']) {
+         $new_nodes += $node;
+      }
+      else {
+        $info['nodes'] += $node;
       }
     }
+    $info['nodes'] += $new_nodes;
   }
 
   return $info;
@@ -214,7 +224,7 @@ function _draggableviews_info(&$view, $prepare_fields = TRUE, $prepare_options =
  *   An instance of the handler
  */
 function _draggableviews_init_handler($field, &$view) {
-  if (($handler_info = draggableviews_discover_handlers($field['handler'])) && file_exists($handler_info['path'] .'/'. $handler_info['file'])) {
+  if (isset($field['handler']) && ($handler_info = draggableviews_discover_handlers($field['handler'])) && file_exists($handler_info['path'] .'/'. $handler_info['file'])) {
     require_once($handler_info['path'] .'/'. $handler_info['file']);
     $handler = new $handler_info['handler'];
     $handler->init($field['field'], $view);
@@ -348,7 +358,7 @@ function _draggableviews_build_hierarchy(&$info) {
     // To guaranteer that the ? is always the lowest, we choose
     // the minimum.
     // Due to this it's recommended that all order fields have
-    // the same minimum value!
+    // the same minimum value! @todo: WHY? DOESN'T MAKE SENSE ANY MORE
 
     $depth = ($depth == -1) ? 0 : $depth;
 
@@ -466,8 +476,15 @@ function _draggableviews_detect_order_collisions(&$info) {
     // make sure that the minimum value cannot be used
     if (!is_array($order[$parent])) $order[$parent] = array($min_value);
 
-    // first try to keep current value
-    $tmp_order = $order_field_value;
+    if (isset($order_field_value)) {
+      // first try to keep current value
+      $tmp_order = $order_field_value;
+    }
+    else {
+      // if no value set, default to the minimum value.
+      // So the next free value will be assigned automatically
+      $tmp_order = $min_value;
+    }
 
     while (is_numeric(array_search($tmp_order, $order[$parent]))) {
       // if there already exists an order value for this depth/parent
@@ -660,13 +677,13 @@ function draggableviews_views_pre_render(&$view) {
   if (!_draggableviews_analyze_structure($info)) {
     // the structure is broken
     if (_draggableviews_rebuild_hierarchy($info)) {
-      drupal_set_message('The structure was broken. It has been repaired successfully');
+      drupal_set_message('The structure was broken. It has been repaired successfully.');
       // the structure has been repaired
       $view->executed = FALSE;
       $view->execute();
     }
     else {
-      drupal_set_message('The struture is broken. It could not be repaired', 'error');
+      drupal_set_message('The struture is broken. It could not be repaired.', 'error');
       // the structure could not be repaired
       return;
     }
