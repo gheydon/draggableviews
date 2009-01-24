@@ -232,7 +232,7 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
   // get view object
   $view_obj = $vars['form']['#parameters'][2];
   // get structured info array
-  $info     = _draggableviews_info($view_obj->view, FALSE, TRUE, FALSE);
+  $info     = _draggableviews_info($view_obj->view, TRUE, TRUE, TRUE);
 
   if (user_access('Allow Reordering') && isset($info['hierarchy'])) {
     // fetch expand information from database
