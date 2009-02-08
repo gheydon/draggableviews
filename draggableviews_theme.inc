@@ -194,7 +194,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
   }
 
   // output data
-  $vars['tabledrag_table_id'] = 'draggableview_'. $view->name;
+  $vars['tabledrag_table_id'] = 'draggableview_'. $view->name .'_'. $vars['id'];
 
   if (user_access('Allow Reordering')) {
     // prepare tabledrag settings for output
