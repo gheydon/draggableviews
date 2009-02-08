@@ -40,15 +40,15 @@ function draggableviews_view_draggabletable_form_submit($vars) {
   $info = _draggableviews_info($view);
 
   if (!isset($info['order'])) return;
-
-
+  
   // loop through all resulting nodes
-  foreach ($results as $row) {
-
+  foreach ($results AS $row) {
+    // set order values
     if (isset($info['order']['fields'])) {
-      $info['input'][$row->nid]['order'][] = $input[$info['order']['fields'][0]['field_name'] .'_'. $row->nid];
+      // @todo: Why using [0] for input values. Antiquated?
+      $info['input'][$row->nid]['order'][0] = $input[$info['order']['fields'][0]['field_name'] .'_'. $row->nid];
     }
-
+    // set parent values
     if (isset($info['hierarchy'])) {
       $info['input'][$row->nid]['parent'] = $input[$info['hierarchy']['field']['field_name'] .'_'. $row->nid];
     }
@@ -672,6 +672,27 @@ function draggableviews_views_pre_render(&$view) {
   $info = _draggableviews_info($view);
 
   if (!isset($info['order'])) return;
+
+  // If click sort was used build order values manually
+  if ($_GET['order']) {
+    // loop through all resulting nodes
+    for ($i = 0; $i < count($view->result); $i++) {
+      if (isset($info['order']['fields'])) {
+        // Assign ascending order values, skipping the minimum value.
+        $info['nodes'][$view->result[$i]->nid]['order'][0] = $info['order']['fields'][0]['handler']->get_minimum_value() + 1 + $i;
+      }
+
+      // set parent values
+      if (isset($info['hierarchy'])) {
+        // Bring all children down to the root level.
+        $info['nodes'][$view->result[$i]->nid]['parent'] = 0;
+      }
+    }
+
+    _draggableviews_save_hierarchy($info);
+    $view->executed = FALSE;
+    $view->execute();
+  }
 
   // analyze structure (also calculates depths)
   if (!_draggableviews_analyze_structure($info)) {
