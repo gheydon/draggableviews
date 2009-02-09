@@ -222,9 +222,10 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
    * Render the draggable table style.
    */
   function render() {
-    // call form handler to wrap around a form.
-    // -> this makes it possible to submit changes.
-    return drupal_get_form('draggableviews_view_draggabletable_form', $this);
+    // We need to wrap around a form to make it possible to submit changes.
+    // Due to the fact that multiple views can be shown on the same page we
+    // need to use an unique form_id every time we call this function.
+    return drupal_get_form('draggableviews_view_draggabletable_form_'. $this->view->name, $this);
   }
 }
 
