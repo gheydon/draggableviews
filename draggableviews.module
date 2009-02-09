@@ -147,18 +147,42 @@ function draggableviews_perm() {
 }
 
 /**
+* Implementing hook_forms
+*/
+function draggableviews_forms() {
+  $args = func_get_args();
+  $form_id = $args[0];
+  if (strpos($form_id, "draggableviews_view_draggabletable_form") === 0) {
+    $forms[$form_id] = array(
+      'callback' => 'draggableviews_view_draggabletable_form',
+    );
+  }
+  return $forms;
+}
+
+/**
  * Implement hook_theme
  */
 function draggableviews_theme() {
-  return array(
-    'draggableviews_ui_style_plugin_draggabletable' => array(
-      'arguments' => array('form' => NULL),
-    ),
-    'draggableviews_view_draggabletable_form' => array(
-      'template' => 'draggableviews-view-draggabletable-form',
-      'arguments' => array('form' => NULL),
-    ),
+  $array = array();
+  $array['draggableviews_ui_style_plugin_draggabletable'] = array(
+    'arguments' => array('form' => NULL),
   );
+
+  // register theme function for all views
+  $views = views_get_all_views();
+  foreach ($views AS $view) {
+    if (!isset($view->disabled) || $view->disabled === FALSE) {
+      $array['draggableviews_view_draggabletable_form_'. $view->name] = array(
+        'template' => 'draggableviews-view-draggabletable-form',
+        'preprocess functions' => array(
+          'template_preprocess_draggableviews_view_draggabletable_form',
+        ),
+        'arguments' => array('form' => NULL),
+      );
+    }
+  }
+  return $array;
 }
 
 /**
