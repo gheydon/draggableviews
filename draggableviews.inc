@@ -16,6 +16,7 @@ function draggableviews_view_draggabletable_form($form_state, $view) {
     '#type' => 'submit',
     '#value' => t('Save'),
   );
+  $form['#submit'][] = 'draggableviews_view_draggabletable_form_submit';
 
   return $form;
 }
