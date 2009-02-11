@@ -6,13 +6,15 @@ if (Drupal.jsEnabled) {
 
 //load editfield-plugin
 function draggableviews_load(){
-  $(".tabledrag-root").each( function(i) {
+  $("tr.draggable").each( function(i) {
     var nid = $(this).find('td > .hidden_nid').attr('value');
-    $(this).find('td:first').each( function(i) {
-      //$(this).append('<a class="draggableviews-expand" href="#" onclick="javascript:draggableviews_collapse('+nid+')">collapse</a>');
-      $(this).append('<div class="draggableviews-expand" href="#"></div>').children('.draggableviews-expand').bind('click', function(){draggableviews_collapse(nid);});
-    });
-    
+    // append icon only if we find at least one child
+    if ($("tr:has(td > ." + Drupal.settings.draggableviews.parent + "[value="+nid+"])").size()>0) {
+      $(this).find('td:first').each( function(i) {
+        $(this).append('<div class="draggableviews-expand" href="#"></div>').children('.draggableviews-expand').bind('click', function(){draggableviews_collapse(nid);});
+      });
+    }
+
     // apply collapsed/expanded state
     if (Drupal.settings.draggableviews.states) {
       if (Drupal.settings.draggableviews.states[nid]) {
