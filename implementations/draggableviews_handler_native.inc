@@ -15,6 +15,7 @@ class draggableviews_handler_native {
   function init($field_name, &$view) {
     $this->field_name = $field_name;
     $this->view       = $view;
+    $this->pager      = $view->pager;
 
     $this->delta = $this->view->field[$field_name]->definition['draggableviews_delta'];
   }
@@ -28,7 +29,20 @@ class draggableviews_handler_native {
     if (!isset($attributes['class'])) $attributes['class'] = $field['field_name'];
 
     $options = array();
-    for ($i = 0; $i <= 40; $i++) $options[$i] = $i;
+
+    // if items per page are limitated show only the limited set of values.
+    // This makes nodes from a certain page independent from other pages (assumed that
+    // there's no hidden node with an order value that refers to the current page).
+    if ($this->pager['items_per_page'] > 0) {
+      $start = $this->pager['items_per_page'] * $this->pager['current_page'];
+      $end = $start + $this->pager['items_per_page'];
+    }
+    else {
+      $start = 0;
+      $end = count($this->view->result);
+    }
+
+    for ($i = $start; $i < $end; $i++) $options[$i] = $i;
 
     switch ($this->field->content_field['widget']['type']) {
       default:
