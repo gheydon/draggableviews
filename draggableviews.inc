@@ -21,7 +21,6 @@ function draggableviews_view_draggabletable_form($form_state, $view) {
   return $form;
 }
 
-
 /**
  * Implementing hook_submit
  */
@@ -137,6 +136,8 @@ function _draggableviews_info(&$view, $prepare_fields = TRUE, $prepare_options =
 
   // build information array
   $info = array();
+  $info['view'] = $view;
+  
   if ($prepare_fields && isset($options['tabledrag_order'])) {
     foreach ($options['tabledrag_order'] as $field) {
       if ($handler = _draggableviews_init_handler($field, $view)) {
@@ -388,6 +389,23 @@ function _draggableviews_rebuild_hierarchy(&$info) {
   $nodes         = &$info['nodes'];
   $info['input'] = array();
   $input         = &$info['input'];
+
+  // If the items to display per page are limitated, we have to make sure that
+  // there's no hidden node with an order value that refers to the current page.
+  // This can be achieved by simply assigning ascending order values.
+  if ($info['view']->pager['items_per_page'] > 0) {
+    // load full view and assign ascending numbers
+    $view = views_get_view($info['view']->name);
+    $view->pager['items_per_page'] = 0;
+    $view->execute();
+
+    // get info array
+    $temp_info = _draggableviews_info($view);
+
+    // assign ascending numbers and save hierarchy
+    _draggableviews_number_serially($temp_info);
+    _draggableviews_save_hierarchy($temp_info);
+  }
 
   // Build an input-array to simulate the form data we would receive on submit
 
@@ -669,6 +687,32 @@ function _draggableviews_filter_fields($types = array(''), $handlers) {
   return $available_fields;
 }
 
+/**
+ * Assign ascending numbers
+ *
+ * @param $nodes
+ *   the nodes array to number
+ */
+function _draggableviews_number_serially(&$info) {
+  // loop through all resulting nodes
+  $minimum_value = $info['order']['fields'][0]['handler']->get_minimum_value();
+  for ($i = 0; $i < count($info['view']->result); $i++) {
+    if (isset($info['order']['fields'])) {
+      // Assign ascending order values, skipping the minimum value.
+      $info['nodes'][$info['view']->result[$i]->nid]['order'][0] = $minimum_value + 1 + $i;
+    }
+
+    // set parent values
+    if (isset($info['hierarchy'])) {
+      // Bring all children down to the root level.
+      $info['nodes'][$info['view']->result[$i]->nid]['parent'] = 0;
+    }
+  }
+}
+
+/**
+ * Imlpementing hook_views_pre_render
+ */
 function draggableviews_views_pre_render(&$view) {
   $info = _draggableviews_info($view);
 
@@ -676,20 +720,8 @@ function draggableviews_views_pre_render(&$view) {
 
   // If click sort was used build order values manually
   if ($_GET['order']) {
-    // loop through all resulting nodes
-    for ($i = 0; $i < count($view->result); $i++) {
-      if (isset($info['order']['fields'])) {
-        // Assign ascending order values, skipping the minimum value.
-        $info['nodes'][$view->result[$i]->nid]['order'][0] = $info['order']['fields'][0]['handler']->get_minimum_value() + 1 + $i;
-      }
-
-      // set parent values
-      if (isset($info['hierarchy'])) {
-        // Bring all children down to the root level.
-        $info['nodes'][$view->result[$i]->nid]['parent'] = 0;
-      }
-    }
-
+    // assign ascending numbers
+    _draggableviews_number_serially($info);
     _draggableviews_save_hierarchy($info);
     $view->executed = FALSE;
     $view->execute();
@@ -705,7 +737,7 @@ function draggableviews_views_pre_render(&$view) {
       $view->execute();
     }
     else {
-      drupal_set_message('The struture is broken. It could not be repaired.', 'error');
+      drupal_set_message('The structure is broken. It could not be repaired.', 'error');
       // the structure could not be repaired
       return;
     }
