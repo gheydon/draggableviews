@@ -11,6 +11,9 @@
  */
 class draggableviews_handler_cck {
   function init($field_name, &$view) {
+    $this->view            = $view;
+    $this->pager           = $view->pager;
+
     $this->field_name      = $field_name;
 
     $this->options         = $view->display['default']->display_options['style_options'];
@@ -64,6 +67,22 @@ class draggableviews_handler_cck {
 
   function get_form_element($value, $attributes = array()) {
     if (!isset($attributes['class'])) $attributes['class'] = $field['field_name'];
+    
+    $options = array();
+
+    // if items per page are limitated show only the limited set of values.
+    // This makes nodes from a certain page independent from other pages (assumed that
+    // there's no hidden node with an order value that refers to the current page).
+    if ($this->pager['items_per_page'] > 0) {
+      $start = $this->pager['items_per_page'] * $this->pager['current_page'];
+      $end = $start + $this->pager['items_per_page'];
+    }
+    else {
+      $start = 0;
+      $end = count($this->view->result);
+    }
+
+    for ($i = $start; $i < $end; $i++) $options[$i] = $i;
 
     switch ($this->field->content_field['widget']['type']) {
       case 'optionwidgets_select':
@@ -71,9 +90,7 @@ class draggableviews_handler_cck {
           '#type'  => 'select',
           '#name'  => $attributes['field_name'],
           '#value' => $value,
-          // slice out the first and the last element, so we make it possible
-          // that new nodes may appear on the very top or the very bottom
-          '#options' => array_slice($this->allowed_values, 1, -1, TRUE),
+          '#options' => $options,
           '#attributes' => array('class' => $attributes['class']),
         );
         break;
@@ -90,6 +107,6 @@ class draggableviews_handler_cck {
   }
 
   function get_minimum_value() {
-    return key($this->allowed_values);
+    return -1;
   }
 }
