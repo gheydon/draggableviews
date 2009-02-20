@@ -169,11 +169,19 @@ function draggableviews_theme() {
     'arguments' => array('form' => NULL),
   );
 
+  $array['draggableviews_view_draggabletable_form_new'] = array(
+    'template' => 'draggableviews-view-draggabletable-form',
+    'preprocess functions' => array(
+      'template_preprocess_draggableviews_view_draggabletable_form',
+    ),
+    'arguments' => array('form' => NULL),
+  );
+
   // register theme function for all views
   $views = views_get_all_views();
   foreach ($views AS $view) {
     if (!isset($view->disabled) || $view->disabled === FALSE) {
-      $array['draggableviews_view_draggabletable_form_'. $view->name] = array(
+      $array['draggableviews_view_draggabletable_form_'. $view->vid] = array(
         'template' => 'draggableviews-view-draggabletable-form',
         'preprocess functions' => array(
           'template_preprocess_draggableviews_view_draggabletable_form',
