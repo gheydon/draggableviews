@@ -278,6 +278,12 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
 
   $vars['view'] = $output;
 
-  // render submit form
-  $vars['submit_form'] = user_access('Allow Reordering') ? drupal_render($vars['form']) : '';
+  // Render submit form.
+  // Don't render if user has no access or view hasn't been saved yet.
+  if (is_numeric($view_obj->view->vid) && user_access('Allow Reordering')) {
+    $vars['submit_form'] =  drupal_render($vars['form']);
+  }
+  else {
+    $vars['submit_form'] = '';
+  }
 }
