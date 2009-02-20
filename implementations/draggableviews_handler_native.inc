@@ -50,8 +50,6 @@ class draggableviews_handler_native {
           '#type'  => 'select',
           '#name'  => $attributes['field_name'],
           '#value' => $value,
-          // slice out the first and the last element, so we make it possible
-          // that new nodes may appear on the very top or the very bottom
           '#options' => $options,
           '#attributes' => array('class' => $attributes['class']),
         );
