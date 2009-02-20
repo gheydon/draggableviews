@@ -104,7 +104,7 @@ function draggableviews_views_query_alter(&$view, &$query) {
       $query->table_queue['draggableviews_structure'. $i]['join']->extra[] = array(
           'field' => 'vid',
           'operator' => '=',
-          'value' => $view->vid,
+          'value' => is_numeric($view->vid) ? $view->vid : 0,
           'numeric' => TRUE,
       );
     }
