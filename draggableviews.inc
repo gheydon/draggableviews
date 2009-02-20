@@ -40,7 +40,7 @@ function draggableviews_view_draggabletable_form_submit($vars) {
   $info = _draggableviews_info($view);
 
   if (!isset($info['order'])) return;
-  
+
   // loop through all resulting nodes
   foreach ($results AS $row) {
     // set order values
@@ -137,9 +137,14 @@ function _draggableviews_info(&$view, $prepare_fields = TRUE, $prepare_options =
   // build information array
   $info = array();
   $info['view'] = $view;
-  
+
   if ($prepare_fields && isset($options['tabledrag_order'])) {
     foreach ($options['tabledrag_order'] as $field) {
+      if (!isset($fields[$field['field']])) {
+        drupal_set_message(t('Draggableviews: field <i>') . $field['field'] . t('</i> could not be found (..afterwards removed from Fields section?). Check your settings.'), 'error');
+        unset($info['order']);
+        return $info;
+      }
       if ($handler = _draggableviews_init_handler($field, $view)) {
         $info['order']['fields'][] = array(
           'handler' => $handler,
@@ -395,16 +400,21 @@ function _draggableviews_rebuild_hierarchy(&$info) {
   // This can be achieved by simply assigning ascending order values.
   if ($info['view']->pager['items_per_page'] > 0) {
     // load full view and assign ascending numbers
-    $view = views_get_view($info['view']->name);
+    $view = $info['view']->clone_view();
     $view->pager['items_per_page'] = 0;
+    $view->executed = FALSE;
     $view->execute();
 
-    // get info array
-    $temp_info = _draggableviews_info($view);
+    // We preserve the old info array and just change the view object which contains
+    // the results. We're not allowed to build an info array from scratch because there
+    // could be a difference between current settings and saved settings view (preview mode).
+    $temp_info = $info;
+    $temp_info['view'] = $view;
 
     // assign ascending numbers and save hierarchy
     _draggableviews_number_serially($temp_info);
     _draggableviews_save_hierarchy($temp_info);
+    return true;
   }
 
   // Build an input-array to simulate the form data we would receive on submit
@@ -714,6 +724,10 @@ function _draggableviews_number_serially(&$info) {
  * Imlpementing hook_views_pre_render
  */
 function draggableviews_views_pre_render(&$view) {
+  // clear theming registry to force drupal to call hook_theme
+  // @todo: This is not the best place to do this
+  drupal_rebuild_theme_registry();
+
   $info = _draggableviews_info($view);
 
   if (!isset($info['order'])) return;
@@ -725,10 +739,12 @@ function draggableviews_views_pre_render(&$view) {
     _draggableviews_save_hierarchy($info);
     $view->executed = FALSE;
     $view->execute();
+    return;
   }
 
   // analyze structure (also calculates depths)
-  if (!_draggableviews_analyze_structure($info)) {
+  // don't analyze if view hasn't been saved yet
+  if (is_numeric($view->vid) && !_draggableviews_analyze_structure($info)) {
     // the structure is broken
     if (_draggableviews_rebuild_hierarchy($info)) {
       drupal_set_message('The structure was broken. It has been repaired successfully.');
