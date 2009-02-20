@@ -210,7 +210,6 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         '#default_value' => isset($current['tabledrag_expand']) ? $current['tabledrag_expand'] : array('expand_links'),
     );
 
-
     // Let extension modules alter the output
     foreach (module_implements('draggableviews_style_plugin_form_alter') as $module) {
       $function = $module .'_draggableviews_style_plugin_form_alter';
@@ -224,8 +223,9 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
   function render() {
     // We need to wrap around a form to make it possible to submit changes.
     // Due to the fact that multiple views can be shown on the same page we
-    // need to use an unique form_id every time we call this function.
-    return drupal_get_form('draggableviews_view_draggabletable_form_'. $this->view->name, $this);
+    // need to use an unique form_id for each view. Same views can share the same id
+    // because the concerned views object is the same.
+    return drupal_get_form('draggableviews_view_draggabletable_form_'. $this->view->vid, $this);
   }
 }
 
