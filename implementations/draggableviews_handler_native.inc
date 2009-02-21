@@ -18,6 +18,13 @@ class draggableviews_handler_native {
     $this->pager      = $view->pager;
 
     $this->delta = $this->view->field[$field_name]->definition['draggableviews_delta'];
+
+    if ($field_name == $view->style_plugin->options['tabledrag_hierarchy']['field']) {
+      $this->type = 'hierarchy';
+    }
+    else {
+      $this->type = 'order';
+    }
   }
 
   function save($nid, $value) {
@@ -28,24 +35,22 @@ class draggableviews_handler_native {
   function get_form_element($value, $attributes = array()) {
     if (!isset($attributes['class'])) $attributes['class'] = $field['field_name'];
 
-    $options = array();
-
-    // if items per page are limitated show only the limited set of values.
-    // This makes nodes from a certain page independent from other pages (assumed that
-    // there's no hidden node with an order value that refers to the current page).
-    if ($this->pager['items_per_page'] > 0) {
-      $start = $this->pager['items_per_page'] * $this->pager['current_page'];
-      $end = $start + $this->pager['items_per_page'];
-    }
-    else {
-      $start = 0;
-      $end = count($this->view->result);
-    }
-
-    for ($i = $start; $i < $end; $i++) $options[$i] = $i;
-
-    switch ($this->field->content_field['widget']['type']) {
+    switch ($this->type) {
       default:
+        $options = array();
+        // if items per page are limitated show only the limited set of values.
+        // This makes nodes from a certain page independent from other pages (assumed that
+        // there's no hidden node with an order value that refers to the current page).
+        if ($this->pager['items_per_page'] > 0) {
+          $start = $this->pager['items_per_page'] * $this->pager['current_page'];
+          $end = $start + $this->pager['items_per_page'];
+        }
+        else {
+          $start = 0;
+          $end = count($this->view->result);
+        }
+        for ($i = $start; $i < $end; $i++) $options[$i] = $i;
+
         return array(
           '#type'  => 'select',
           '#name'  => $attributes['field_name'],
@@ -55,8 +60,7 @@ class draggableviews_handler_native {
         );
         break;
 
-      case 'hidden':
-
+      case 'hierarchy':
         return array(
           '#type' => 'hidden',
           '#name' => $attributes['field_name'],
