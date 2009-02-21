@@ -140,11 +140,6 @@ function _draggableviews_info(&$view, $prepare_fields = TRUE, $prepare_options =
 
   if ($prepare_fields && isset($options['tabledrag_order'])) {
     foreach ($options['tabledrag_order'] as $field) {
-      if (!isset($fields[$field['field']])) {
-        drupal_set_message(t('Draggableviews: field <i>') . $field['field'] . t('</i> could not be found (..afterwards removed from Fields section?). Check your settings.'), 'error');
-        unset($info['order']);
-        return $info;
-      }
       if ($handler = _draggableviews_init_handler($field, $view)) {
         $info['order']['fields'][] = array(
           'handler' => $handler,
@@ -724,10 +719,6 @@ function _draggableviews_number_serially(&$info) {
  * Imlpementing hook_views_pre_render
  */
 function draggableviews_views_pre_render(&$view) {
-  // clear theming registry to force drupal to call hook_theme
-  // @todo: This is not the best place to do this
-  drupal_rebuild_theme_registry();
-
   $info = _draggableviews_info($view);
 
   if (!isset($info['order'])) return;
