@@ -47,7 +47,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         $errors[] = t('Display "@display": Draggableviews: order field <i>@field</i> could not be found (..afterwards removed from Fields section?). Check your settings.', array('@display' => $this->display->display_title, '@field' => $field['field']));
       }
     }
-    if (!isset($handlers[$this->options['tabledrag_hierarchy']['field']])) {
+    if ($this->options['tabledrag_hierarchy']['field'] != 'none' && !isset($handlers[$this->options['tabledrag_hierarchy']['field']])) {
       $errors[] = t('Display "@display": Draggableviews: hierarchy field <i>@field</i> could not be found (..afterwards removed from Fields section?). Check your settings.', array('@display' => $this->display->display_title, '@field' => $this->options['tabledrag_hierarchy']['field']));
     }
 
