@@ -97,7 +97,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
 
   // Draggableviews output begin
 
-  $info = _draggableviews_info($view);
+  $info = $view->draggableviews_info;
 
   if (!isset($info['order'])) return;
 
@@ -232,7 +232,7 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
   // get view object
   $view_obj = $vars['form']['#parameters'][2];
   // get structured info array
-  $info     = _draggableviews_info($view_obj->view, TRUE, TRUE, TRUE);
+  $info     = $view_obj->view->draggableviews_info;
 
   if (user_access('Allow Reordering') && isset($info['hierarchy'])) {
     // fetch expand information from database
@@ -268,14 +268,30 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
     }
   }
 
-  //theme view
-  $sets = $view_obj->render_grouping($view_obj->view->result, $options['grouping']);
-
-  $output = '';
-  foreach ($sets as $title => $records) {
-    $output .= theme($view_obj->theme_functions(), $view_obj->view, $options, $records, $title);
+  if ($view_obj->uses_row_plugin() && empty($view_obj->row_plugin)) {
+      vpr('views_plugin_style_default: Missing row plugin');
   }
+  else {
+    // Group the rows according to the grouping field, if specified.
+    $sets = $view_obj->render_grouping($view_obj->view->result, $view_obj->options['grouping']);
 
+    // Render each group separately and concatenate.  Plugins may override this
+    // method if they wish some other way of handling grouping.
+    $output = '';
+    foreach ($sets as $title => $records) {
+/*      if ($view_obj->uses_row_plugin()) {
+        $rows = array();
+        foreach ($records as $label => $row) {
+          $rows[] = $view_obj->row_plugin->render($row);
+        }
+      }
+      else {
+        $rows = $records;
+      }*/
+
+      $output .= theme($view_obj->theme_functions(), $view_obj->view, $view_obj->options, $records, $title);
+    }
+  }
   $vars['view'] = $output;
 
   // Render submit form.
