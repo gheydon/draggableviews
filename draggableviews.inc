@@ -37,7 +37,7 @@ function draggableviews_view_draggabletable_form_submit($vars) {
   // get input
   $input = $vars['submit']['#post'];
 
-  $info = _draggableviews_info($view);
+  $info = $view->draggableviews_info;
 
   if (!isset($info['order'])) return;
 
@@ -129,67 +129,67 @@ function draggableviews_view_draggabletable_form_submit($vars) {
  *     ),
  *   );
  */
-function _draggableviews_info(&$view, $prepare_fields = TRUE, $prepare_options = FALSE, $prepare_results = TRUE) {
-  $options = &$view->style_plugin->options;
-  $fields  = &$view->field;
-  $results = &$view->result;
+function _draggableviews_info($view, $info = NULL) {
+  $options = $view->style_plugin->options;
+  $fields  = $view->field;
+  $results = $view->result;
 
-  // build information array
-  $info = array();
-  $info['view'] = $view;
+  // if there is already an info array just rebuild the nodes array and skip this section
+  if (!isset($info)) {
+    // build information array
+    $info = array();
+    $info['view'] = $view;
 
-  if ($prepare_fields && isset($options['tabledrag_order'])) {
-    foreach ($options['tabledrag_order'] as $field) {
-      if ($handler = _draggableviews_init_handler($field, $view)) {
-        $info['order']['fields'][] = array(
-          'handler' => $handler,
-          'field_name' => $field['field'],
-          'field_alias' => $fields[$field['field']]->field_alias,
-        );
-      }
-      else {
-      	drupal_set_message(t('Draggableviews: Handler <i>') . $field['handler'] . t('</i> could not be found.'), 'error');
-        unset($info['order']);
-        return $info;
-      }
-    }
-    $info['order']['visible'] = strcmp($options['tabledrag_order_visible']['visible'], 'visible') == 0 ? TRUE : FALSE;
-    $info['order']['minimum_value'] = $info['order']['fields'][0]['handler']->get_minimum_value();
-
-    if (count($info['order']['fields']) >= 2 && $options['tabledrag_hierarchy']['field'] != 'none') {
-      if ($handler = _draggableviews_init_handler($options['tabledrag_hierarchy'], $view)) {
-        $info['hierarchy'] = array(
-          'field' => array(
-             'handler' => $handler,
-             'field_name' => $options['tabledrag_hierarchy']['field'],
-             'field_alias' => $fields[$options['tabledrag_hierarchy']['field']]->field_alias,
-          ),
-          'visible' => strcmp($options['tabledrag_hierarchy_visible']['visible'], 'visible') == 0 ? TRUE : FALSE,
-        );
-
-        if ($prepare_fields && isset($options['tabledrag_types'])) {
-          foreach ($options['tabledrag_types'] as $type) {
-            $info['types'][$type['node_type']] = $type['type'];
-          }
+    if (isset($options['tabledrag_order'])) {
+      foreach ($options['tabledrag_order'] as $field) {
+        if ($handler = _draggableviews_init_handler($field, $view)) {
+          $info['order']['fields'][] = array(
+            'handler' => $handler,
+            'field_name' => $field['field'],
+            'field_alias' => $fields[$field['field']]->field_alias,
+          );
         }
+        else {
+        	drupal_set_message(t('Draggableviews: Handler <i>') . $field['handler'] . t('</i> could not be found.'), 'error');
+          unset($info['order']);
+          return $info;
+        }
+      }
+      $info['order']['visible'] = strcmp($options['tabledrag_order_visible']['visible'], 'visible') == 0 ? TRUE : FALSE;
+      $info['order']['minimum_value'] = $info['order']['fields'][0]['handler']->get_minimum_value();
 
-        if ($prepare_options) {
+      if (count($info['order']['fields']) >= 2 && $options['tabledrag_hierarchy']['field'] != 'none') {
+        if ($handler = _draggableviews_init_handler($options['tabledrag_hierarchy'], $view)) {
+          $info['hierarchy'] = array(
+            'field' => array(
+              'handler' => $handler,
+              'field_name' => $options['tabledrag_hierarchy']['field'],
+              'field_alias' => $fields[$options['tabledrag_hierarchy']['field']]->field_alias,
+            ),
+            'visible' => strcmp($options['tabledrag_hierarchy_visible']['visible'], 'visible') == 0 ? TRUE : FALSE,
+          );
+
+          if (isset($options['tabledrag_types'])) {
+            foreach ($options['tabledrag_types'] as $type) {
+              $info['types'][$type['node_type']] = $type['type'];
+            }
+          }
+
           $info['expand_links'] = array(
             'show'              => strcmp($options['tabledrag_expand']['expand_links'], 'expand_links') == 0 ? TRUE : FALSE,
             'default_collapsed' => strcmp($options['tabledrag_expand']['collapsed'], 'collapsed') == 0 ? TRUE : FALSE,
           );
         }
-      }
-      else {
-      	drupal_set_message(t('Draggableviews: Handler <i>') . $field['handler'] . t('</i> could not be found.'), 'error');
-        unset($info['hierarchy']);
+        else {
+          drupal_set_message(t('Draggableviews: Handler <i>') . $field['handler'] . t('</i> could not be found.'), 'error');
+        }
       }
     }
   }
 
   $info['nodes'] = array();
 
-  if ($prepare_results && $prepare_fields && $options['tabledrag_order']) {
+  if ($info['order']) {
     $new_nodes = array();
     // loop through all resulting nodes
     foreach ($results as $row) {
@@ -378,12 +378,7 @@ function _draggableviews_build_hierarchy(&$info) {
  * @param info
  *   The structures information array
  */
-function _draggableviews_rebuild_hierarchy(&$info) {
-  // count recursions
-  static $recursion_counter;
-  if (!isset($recursion_counter)) $recursion_counter = 0;
-  $recursion_counter++;
-
+function _draggableviews_rebuild_hierarchy(&$info, $recursion_counter = 0) {
   //drupal_set_message("Draggableviews: Rebuilding structure..");
 
   $nodes         = &$info['nodes'];
@@ -402,13 +397,18 @@ function _draggableviews_rebuild_hierarchy(&$info) {
 
     // We preserve the old info array and just change the view object which contains
     // the results. We're not allowed to build an info array from scratch because there
-    // could be a difference between current settings and saved settings view (preview mode).
+    // could be a difference between current settings and saved settings (preview mode).
     $temp_info = $info;
     $temp_info['view'] = $view;
 
     // assign ascending numbers and save hierarchy
     _draggableviews_number_serially($temp_info);
     _draggableviews_save_hierarchy($temp_info);
+
+    // rebuild the info array because order of nodes has changed
+    $info['view']->executed = FALSE;
+    $info['view']->execute();
+    $info = _draggableviews_info($info['view'], $info);
     return true;
   }
 
@@ -440,7 +440,7 @@ function _draggableviews_rebuild_hierarchy(&$info) {
 
     if ($recursion_counter <= 10) {
       // start recursion
-      return _draggableviews_rebuild_hierarchy($info);
+      return _draggableviews_rebuild_hierarchy($info, $recursion_counter + 1);
     }
     else {
       //drupal_set_message(t('Reached limit of '. $recursion_counter .' recursions'));
@@ -449,7 +449,6 @@ function _draggableviews_rebuild_hierarchy(&$info) {
   }
   else {
     //drupal_set_message(t('Solved all problems after '. $recursion_counter .' recursions'));
-    // redirect here
     return TRUE;
   }
 }
@@ -720,6 +719,9 @@ function _draggableviews_number_serially(&$info) {
  */
 function draggableviews_views_pre_render(&$view) {
   $info = _draggableviews_info($view);
+  // attach info array to views object,
+  // so we don't have to build it again when the theme function is called
+  $view->draggableviews_info = &$info;
 
   if (!isset($info['order'])) return;
 
