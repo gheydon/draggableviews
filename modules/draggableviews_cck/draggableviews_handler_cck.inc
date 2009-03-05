@@ -67,25 +67,12 @@ class draggableviews_handler_cck {
 
   function get_form_element($value, $attributes = array()) {
     if (!isset($attributes['class'])) $attributes['class'] = $field['field_name'];
-    
-    $options = array();
-
-    // if items per page are limitated show only the limited set of values.
-    // This makes nodes from a certain page independent from other pages (assumed that
-    // there's no hidden node with an order value that refers to the current page).
-    if ($this->pager['items_per_page'] > 0) {
-      $start = $this->pager['items_per_page'] * $this->pager['current_page'];
-      $end = $start + $this->pager['items_per_page'];
-    }
-    else {
-      $start = 0;
-      $end = count($this->view->result);
-    }
-
-    for ($i = $start; $i < $end; $i++) $options[$i] = $i;
 
     switch ($this->field->content_field['widget']['type']) {
       case 'optionwidgets_select':
+        $options = array();
+        for ($i = $this->range_start; $i <= $this->range_end; $i++) $options[$i] = $i;
+
         return array(
           '#type'  => 'select',
           '#name'  => $attributes['field_name'],
@@ -104,6 +91,11 @@ class draggableviews_handler_cck {
           '#attributes' => array('class' => $attributes['class']),
         );
     }
+  }
+  
+  function set_range($start, $end) {
+    $this->range_start = $start;
+    $this->range_end   = $end;
   }
 
   function get_minimum_value() {

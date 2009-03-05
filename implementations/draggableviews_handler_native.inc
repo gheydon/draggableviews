@@ -38,18 +38,7 @@ class draggableviews_handler_native {
     switch ($this->type) {
       default:
         $options = array();
-        // if items per page are limitated show only the limited set of values.
-        // This makes nodes from a certain page independent from other pages (assumed that
-        // there's no hidden node with an order value that refers to the current page).
-        if ($this->pager['items_per_page'] > 0) {
-          $start = $this->pager['items_per_page'] * $this->pager['current_page'];
-          $end = $start + $this->pager['items_per_page'];
-        }
-        else {
-          $start = 0;
-          $end = count($this->view->result);
-        }
-        for ($i = $start; $i < $end; $i++) $options[$i] = $i;
+        for ($i = $this->range_start; $i <= $this->range_end; $i++) $options[$i] = $i;
 
         return array(
           '#type'  => 'select',
@@ -68,6 +57,11 @@ class draggableviews_handler_native {
           '#attributes' => array('class' => $attributes['class']),
         );
     }
+  }
+  
+  function set_range($start, $end) {
+    $this->range_start = $start;
+    $this->range_end   = $end;
   }
 
   function get_minimum_value() {

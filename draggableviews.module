@@ -7,7 +7,8 @@
  * With this plugin rows become draggable and can be subordinated.
  */
 
-include_once('draggableviews.inc');
+require_once './' . drupal_get_path('module', 'draggableviews') . "/draggableviews.inc";
+require_once './' . drupal_get_path('module', 'draggableviews') . "/draggableviews_theme.inc";
 
 /**
  * Display help and module information
@@ -58,7 +59,6 @@ function draggableviews_admin_validate($form, &$form_state) {
  * Implementing hook_menu
  */
 function draggableviews_menu() {
-
   $items = array();
   $items['admin/settings/draggableviews'] = array(
     'title' => 'Draggable views settings',
@@ -68,15 +68,210 @@ function draggableviews_menu() {
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
   );
-  
   return $items;
 }
 
 /**
- * Discover all Implementations for draggableviews
+* Implementing hook_forms
+*/
+function draggableviews_forms() {
+  $args = func_get_args();
+  $form_id = $args[0];
+  if (strpos($form_id, "draggableviews_view_draggabletable_form") === 0) {
+    $forms[$form_id] = array(
+      'callback' => 'draggableviews_view_draggabletable_form',
+    );
+  }
+  return $forms;
+}
+
+/**
+ * Build the form
+ */
+function draggableviews_view_draggabletable_form($form_state, $view) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  $form['#submit'][] = 'draggableviews_view_draggabletable_form_submit';
+  $form['#redirect'] = array('path' => $_GET['q'], 'query' => 'page='. $view->view->draggableviews_info['page']);
+  return $form;
+}
+
+/**
+ * Implement hook_theme
+ */
+function draggableviews_theme() {
+  $array = array();
+  $array['draggableviews_ui_style_plugin_draggabletable'] = array(
+    'arguments' => array('form' => NULL),
+  );
+
+  $array['draggableviews_view_draggabletable_form_new'] = array(
+    'template' => 'draggableviews-view-draggabletable-form',
+    'preprocess functions' => array(
+      'template_preprocess_draggableviews_view_draggabletable_form',
+    ),
+    'arguments' => array('form' => NULL),
+  );
+
+  // register theme function for all views
+  $views = views_get_all_views();
+  foreach ($views AS $view) {
+    foreach (array_keys($view->display) AS $display_id) {
+      $array['draggableviews_view_draggabletable_form_'. $view->vid . '_'. $display_id] = array(
+        'template' => 'draggableviews-view-draggabletable-form',
+        'preprocess functions' => array(
+          'template_preprocess_draggableviews_view_draggabletable_form',
+        ),
+        'arguments' => array('form' => NULL),
+      );
+    }
+  }
+  return $array;
+}
+
+/**
+ * Imlpementing hook_views_pre_render
+ * 
+ * The code of this function is seperated in two parts:
+ * 1) If click sort was used:
+ *   - Renumber the results as they are returned from the view. Simply use ascending numbers.
+ *   - Re-execute the view. We don't have to check the structure because we built it correctly just before.
+ * 
+ * 2) We analyze the structure. If it's broken:
+ *   - Repair the structure
+ */
+function draggableviews_views_pre_render(&$view) {
+  // Get info array.
+  $info = _draggableviews_info($view);
+
+  if (!isset($info['order'])) {
+    // Nothing to do.
+    return;
+  }
+
+  // Attach the info array to the view object,
+  // so we don't have to build it again when the theme function is called.
+  // We need to use a reference because the info array may change.
+  $view->draggableviews_info = &$info;
+
+  if (!is_numeric($view->vid)) {
+    // The view hasn't been saved yet. Can't do anything.
+    return;
+  }
+
+  // 1) If click sort was used assign order values manually.
+  if ($_GET['order']) {
+    _draggableviews_click_sort($info);
+  }
+  else {global $pager_page_array, $pager_total, $pager_total_items;
+    $a=$pager_page_array;$b=$pager_total;$c=$pager_total_items;
+    // Backup current pager settings
+    $pager = $info['view']->pager;
+
+    if ($info['view']->pager['items_per_page'] > 0) {
+      // Now we have to enlarge the visible window to make dragging to other pages possible.
+      // And we have to guarantee that parents always appear with all their child nodes (..and child nodes with their parents).
+      _draggableviews_extend_view_window($info, 3, 3);
+    }
+    else {
+      for ($i = 0; $i < count($info['order']['fields']); $i++) {
+        $info['order']['fields'][$i]['handler']->set_range(0, count($info['view']->result));
+      }
+    }
+
+    // 2) Check structure.
+    if (!_draggableviews_quick_check_structure($info)) {
+      // The structure is broken and has to be repaired.
+      $info['view']->pager = $pager;
+
+      _draggableviews_rebuild_hierarchy($info);
+      // Now we have to enlarge the visible window to make dragging to other pages possible.
+      // And we have to guarantee that parents always appear with all their child nodes (..and child nodes with their parents).
+      _draggableviews_extend_view_window($info, 3, 3);
+
+      drupal_set_message('The structure was broken. It has been repaired.');
+    }
+    
+    
+    $pager_page_array=$a;$pager_total=$b;$pager_total_items=$c;
+
+    // Calculate depth values. These values will be used for theming.
+    _draggableviews_calculate_depths($info);
+    // Assign original page.
+    $info['page'] = $pager['current_page'];
+  }
+}
+
+/**
+ * Implementing hook_submit
+ */
+function draggableviews_view_draggabletable_form_submit($vars) {
+  // Check permissions.
+  if (!user_access('Allow Reordering')) {
+    drupal_set_message(t('You are not allowed to reorder nodes.'), 'error');
+    return;
+  }
+
+  // Gather all needed information.
+  $view    = $vars['#parameters'][2]->view;
+  $results = $view->result;
+  $input   = $vars['submit']['#post'];
+  $info    = $view->draggableviews_info;
+
+  if (!isset($info['order'])) return;
+
+  // loop through all resulting nodes
+  foreach ($results AS $row) {
+    // set order values
+    if (isset($info['order']['fields'])) {
+      // The input array must have the same structure as the node array
+      // (e.g. because of _draggableviews_get_hierarchy_depth(..))
+      $info['input'][$row->nid]['order'][0] = $input[$info['order']['fields'][0]['field_name'] .'_'. $row->nid];
+    }
+    // set parent values
+    if (isset($info['hierarchy'])) {
+      $info['input'][$row->nid]['parent'] = $input[$info['hierarchy']['field']['field_name'] .'_'. $row->nid];
+    }
+  }
+
+  // build hierarchy
+  _draggableviews_build_hierarchy($info);
+
+  // save structure
+  _draggableviews_save_hierarchy($info);
+
+  if (isset($info['hierarchy'])) {
+    // save expanded/collapsed state
+    global $user;
+
+    foreach ($vars['submit']['#post'] AS $key => $val) {
+      if (ereg('draggableviews_collapsed_', $key)) {
+        $parent_nid = drupal_substr($key, 25);
+        db_query("DELETE FROM {draggableviews_collapsed}
+                  WHERE uid=%d AND parent_nid=%d",
+                  $user->uid, $parent_nid);
+
+        db_query("INSERT INTO {draggableviews_collapsed}
+                  (uid, parent_nid, collapsed) VALUES (%d, %d, %d)",
+                  $user->uid, $parent_nid, $val);
+      }
+    }
+  }
+}
+
+/**
+ * Discover All Implementations For Draggableviews
  *
+ * @param $filter_handler
+ *   The handler to return.
+ * 
+ * @return
+ *   Either the entire array with all handlers or the specified handler entry.
  */
 function draggableviews_discover_handlers($filter_handler = NULL) {
+  // @todo there's no cache functionality implemented yet.
   $cache = array();
   // Get implementation definitions from all modules.
   foreach (module_implements('draggableviews_handlers') as $module) {
@@ -98,7 +293,7 @@ function draggableviews_discover_handlers($filter_handler = NULL) {
       if (!isset($def['handler'])) {
         $def['handler'] = 'draggableviews_handler_'.$handler;
       }
-      // merge the new data in
+      // Merge the new data.
       $cache[$handler] = $def;
     }
   }
@@ -115,7 +310,10 @@ function draggableviews_discover_handlers($filter_handler = NULL) {
 }
 
 /**
- * Return a list of all draggableviews handlers
+ * Get Handlers List
+ * 
+ * @return 
+ *   A list of all draggableviews handlers.
  */
 function draggableviews_get_handlers_list() {
   $handlers = draggableviews_discover_handlers();
@@ -144,53 +342,6 @@ function draggableviews_draggableviews_handlers() {
  */
 function draggableviews_perm() {
   return array('Allow Reordering');
-}
-
-/**
-* Implementing hook_forms
-*/
-function draggableviews_forms() {
-  $args = func_get_args();
-  $form_id = $args[0];
-  if (strpos($form_id, "draggableviews_view_draggabletable_form") === 0) {
-    $forms[$form_id] = array(
-      'callback' => 'draggableviews_view_draggabletable_form',
-    );
-  }
-  return $forms;
-}
-
-/**
- * Implement hook_theme
- */
-function draggableviews_theme() {
-  $array = array();
-  $array['draggableviews_ui_style_plugin_draggabletable'] = array(
-    'arguments' => array('form' => NULL),
-  );
-
-  $array['draggableviews_view_draggabletable_form_new'] = array(
-    'template' => 'draggableviews-view-draggabletable-form',
-    'preprocess functions' => array(
-      'template_preprocess_draggableviews_view_draggabletable_form',
-    ),
-    'arguments' => array('form' => NULL),
-  );
-
-  // register theme function for all views
-  $views = views_get_all_views();
-  foreach ($views AS $view) {
-    if (!isset($view->disabled) || $view->disabled === FALSE) {
-      $array['draggableviews_view_draggabletable_form_'. $view->vid] = array(
-        'template' => 'draggableviews-view-draggabletable-form',
-        'preprocess functions' => array(
-          'template_preprocess_draggableviews_view_draggabletable_form',
-        ),
-        'arguments' => array('form' => NULL),
-      );
-    }
-  }
-  return $array;
 }
 
 /**

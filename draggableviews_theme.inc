@@ -101,11 +101,6 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
 
   if (!isset($info['order'])) return;
 
-  // analyze structure (also calculates depths)
-  if (!_draggableviews_analyze_structure($info)) {
-    return;
-  }
-
   // loop through all rows the view returned
   foreach ($vars['rows'] as $i => $row) {
 
@@ -181,12 +176,17 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     }
 
     if (isset($info['hierarchy'])) {
-      // put indentation in front of first field
+      // Put indentation in front of first field.
       $first_field = each($vars['rows'][$i]);
       $vars['rows'][$i][$first_field['key']] = $indentation . $vars['rows'][$i][$first_field['key']];
     }
 
-    // Let extension modules alter the output
+    // Mark extended nodes.
+    if ($info['nodes'][$nid]['extension'] == TRUE) {
+      $vars['draggableviews_extended'][$i] = TRUE;
+    }
+
+    // Let extension modules alter the output.
     foreach (module_implements('draggableviews_row_alter') as $module) {
       $function = $module .'_draggableviews_row_alter';
       $function($vars['rows'][$i], $nid, $info, $view);
@@ -302,4 +302,150 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
   else {
     $vars['submit_form'] = '';
   }
+}
+
+/**
+ * Theme the form for the table style plugin
+ */
+function theme_draggableviews_ui_style_plugin_draggabletable($form) {
+  // the following lines are copied from the table style plugin
+  /* COPY BEGIN */
+  $output = drupal_render($form['description_markup']);
+
+  $header = array(
+    t('Field'),
+    t('Column'),
+    t('Separator'),
+    array(
+      'data' => t('Sortable'),
+      'align' => 'center',
+    ),
+    array(
+      'data' => t('Default sort'),
+      'align' => 'center',
+    ),
+  );
+  $rows = array();
+  foreach (element_children($form['columns']) as $id) {
+    $row = array();
+    $row[] = drupal_render($form['info'][$id]['name']);
+    $row[] = drupal_render($form['columns'][$id]);
+    $row[] = drupal_render($form['info'][$id]['separator']);
+    if (!empty($form['info'][$id]['sortable'])) {
+      $row[] = array(
+        'data' => drupal_render($form['info'][$id]['sortable']),
+        'align' => 'center',
+      );
+      $row[] = array(
+        'data' => drupal_render($form['default'][$id]),
+        'align' => 'center',
+      );
+    }
+    else {
+      $row[] = '';
+      $row[] = '';
+    }
+    $rows[] = $row;
+  }
+
+  // Add the special 'None' row.
+  $rows[] = array(t('None'), '', '', '', array('align' => 'center', 'data' => drupal_render($form['default'][-1])));
+
+  $output .= theme('table', $header, $rows);
+  /* COPY END */
+
+
+  // Render Draggable view settings
+  // The following lines add the new output from draggableviews
+
+  // build order table
+  $tabledrag_order_rows = array();
+  $i = 1;
+  foreach (element_children($form['tabledrag_order']) AS $id) {
+    $columns = array();
+    $columns[] = 'Level '. $i++;
+    foreach (element_children($form['tabledrag_order'][$id]) AS $col) {
+      $columns[] = drupal_render($form['tabledrag_order'][$id][$col]);
+    }
+    $tabledrag_order_rows[] = $columns;
+  }
+  $tabledrag_order_add = drupal_render($form['tabledrag_order_add']);
+  $tabledrag_order_visible = drupal_render($form['tabledrag_order_visible']);
+
+  $tabledrag_hierarchy = drupal_render($form['tabledrag_hierarchy']);
+  $tabledrag_hierarchy_visible = drupal_render($form['tabledrag_hierarchy_visible']);
+  $description_hierarchy = drupal_render($form['tabledrag_description_hierarchy']);
+
+  // build types table
+  $tabledrag_types_rows = array();
+  foreach (element_children($form['tabledrag_types']) AS $id) {
+    $columns = array();
+    foreach (element_children($form['tabledrag_types'][$id]) AS $col) {
+      $columns[] = drupal_render($form['tabledrag_types'][$id][$col]);
+    }
+    $tabledrag_types_rows[] = $columns;
+  }
+  $tabledrag_types_add = drupal_render($form['tabledrag_types_add']);
+  $description_types   = drupal_render($form['tabledrag_description_types']);
+
+  $tabledrag_expand  = drupal_render($form['tabledrag_expand']);
+
+  // Let extension modules append to the output
+  $extensions = array();
+  foreach (module_implements('draggableviews_style_plugin_render') as $module) {
+    $function = $module .'_draggableviews_style_plugin_render';
+    $extensions[] = $function($form);
+  }
+
+  // append form data left to output
+  // all items that have not been rendered until this point
+  // will be rendered now. So we can seperate the settings we
+  // inherited from plugin_table from plugin_draggableviews settings.
+  $output .= drupal_render($form);
+
+  // append order settings
+  $output .= theme('table', array('&nbsp;', t('Field'), t('Handler'), '&nbsp;'), $tabledrag_order_rows);
+  $output .= $tabledrag_order_add;
+  $output .= $tabledrag_order_visible;
+  // append hierarchy settings
+  $output .= $tabledrag_hierarchy;
+  $output .= $submit_button;
+  $output .= $description_hierarchy;
+  $output .= $tabledrag_hierarchy_visible;
+  // append tabledrag types settings
+  $output .= theme('table', array(t('Node type'), t('Type'), '&nbsp;'), $tabledrag_types_rows);
+  $output .= $tabledrag_types_add;
+  $output .= $description_types;
+  // append expand yes/no checkbox to output
+  $output .= $tabledrag_expand;
+  $output .= $tabledrag_expand_default;
+  // append extension output
+  $output .= implode('', $extensions);
+
+  // return output
+  return $output;
+}
+
+/*
+ * filter handlers by type
+ *
+ * @param $type
+ *   the field type
+ * @param $fields
+ *   the fields array
+ * return
+ *   the available fields
+ */
+function _draggableviews_filter_fields($types = array(''), $handlers) {
+  $available_fields = array();
+
+  foreach ($handlers as $field => $handler) {
+    if ($label = $handler->label()) {
+      $available_fields[$field] = $label;
+    }
+    else {
+      $available_fields[$field] = $handler->ui_name();
+    }
+  }
+  return $available_fields;
 }
