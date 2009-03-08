@@ -224,6 +224,8 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
       drupal_add_js(array('draggableviews' => array('parent' => $info['hierarchy']['field']['field_name'])), 'setting');
     }
   }
+
+  drupal_add_css(drupal_get_path('module', 'draggableviews') .'/styles.css');
 }
 
 function template_preprocess_draggableviews_view_draggabletable_form($vars) {
@@ -263,8 +265,6 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
                       ),
                       'setting');
       }
-
-      drupal_add_css(drupal_get_path('module', 'draggableviews') .'/styles.css');
     }
   }
 

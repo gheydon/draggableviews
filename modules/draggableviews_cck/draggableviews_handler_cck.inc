@@ -92,7 +92,7 @@ class draggableviews_handler_cck {
         );
     }
   }
-  
+
   function set_range($start, $end) {
     $this->range_start = $start;
     $this->range_end   = $end;

@@ -11,3 +11,5 @@ Quick install:
  5) Click "Add order field" button and choose "Value #1" from the list
     Click Update button
  6) Save the view and you're done
+
+The view will not be shown properly in preview mode!

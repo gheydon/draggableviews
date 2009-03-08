@@ -26,37 +26,57 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
 
   function validate() {
     $errors = array();
+    if (!isset($this->options['tabledrag_order'])) return $errors;
 
-    // check if first field is draggableviews handled and will be hidden
-    $found = FALSE;
-    $handlers = $this->display->handler->get_handlers('field');
-    $first_field = key($handlers);
-    if (isset($this->options['tabledrag_order'])) {
-      for ($i = 0; $i < count($this->options['tabledrag_order']); $i++) {
-        if ($this->options['tabledrag_order'][0]['field'] == $first_field && $this->options['tabledrag_order_visible']['visible'] !== 'visible') $found = TRUE;
+    $fields = $this->view->get_items('field', $this->display->id);
+
+    // Check if all configured fields are available.
+    foreach ($this->options['tabledrag_order'] as $field) {
+      if (!isset($fields[$field['field']])) {
+        $errors[] = t('Display "@display": Draggableviews: order field <i>@field</i> could not be found (..afterwards removed from Fields section?). Check your settings.', array('@display' => $this->display->display_title, '@field' => $field['field']));
+        return $errors;
       }
     }
     if (isset($this->options['tabledrag_hierarchy'])) {
-      for ($i = 0; $i < count($this->options['tabledrag_hierarchy']); $i++) {
-        if ($this->options['tabledrag_hierarchy']['field'] == $first_field && $this->options['tabledrag_hierarchy_visible']['visible'] !== 'visible') $found = TRUE;
+      if ($this->options['tabledrag_hierarchy']['field'] != 'none' && !isset($fields[$this->options['tabledrag_hierarchy']['field']])) {
+        $errors[] = t('Display "@display": Draggableviews: hierarchy field <i>@field</i> could not be found (..afterwards removed from Fields section?). Check your settings.', array('@display' => $this->display->display_title, '@field' => $this->options['tabledrag_hierarchy']['field']));
+        return $errors;
       }
+    }
+
+    // Check if first field is draggableviews handled and will be hidden.
+    $found = FALSE;
+    $first_field = key($fields);
+    for ($i = 0; $i < count($this->options['tabledrag_order']); $i++) {
+      if ($this->options['tabledrag_order'][0]['field'] == $first_field && $this->options['tabledrag_order_visible']['visible'] !== 'visible') $found = TRUE;
+    }
+    if (isset($this->options['tabledrag_hierarchy'])) {
+      if ($this->options['tabledrag_hierarchy']['field'] == $first_field && $this->options['tabledrag_hierarchy_visible']['visible'] !== 'visible') $found = TRUE;
     }
     if ($found) {
-      $errors[] = t('Display "@display": The first field must not be Draggableviews-handled when input fields will not be shown.', array('@display' => $this->display->display_title));
+      $errors[] = t('Display "@display": Draggableviews: The drag-handles will be attached to the first field. But the currently configured first field will not be shown. Move the currently configured first field to another position or choose <i>Show input fields?</i> on the settings page.', array('@display' => $this->display->display_title));
     }
 
-    if (isset($this->options['tabledrag_order'])) {
-      // check if all configured fields are available
-      foreach ($this->options['tabledrag_order'] as $field) {
-        if (!isset($handlers[$field['field']])) {
-          $errors[] = t('Display "@display": Draggableviews: order field <i>@field</i> could not be found (..afterwards removed from Fields section?). Check your settings.', array('@display' => $this->display->display_title, '@field' => $field['field']));
-        }
+    // Check sort criteria.
+    $found = FALSE;
+    $sorts = $this->view->get_items('sort', $this->display->id);
+    if (count($sorts) >= count($this->options['tabledrag_order'])) {
+      $sort = current($sorts);
+      for ($i = 0; $i < count($this->options['tabledrag_order']) && $sort !== FALSE; $i++, $sort = next($sorts)) {
+        $field_alias = $this->options['tabledrag_order'][$i]['field'];
+        if (strcmp($fields[$field_alias]['field'], $sort['field']) != 0 || $sort['order'] == 'DESC') $found = TRUE;
       }
     }
-    if (isset($this->options['tabledrag_hierarchy'])) {
-      if ($this->options['tabledrag_hierarchy']['field'] != 'none' && !isset($handlers[$this->options['tabledrag_hierarchy']['field']])) {
-        $errors[] = t('Display "@display": Draggableviews: hierarchy field <i>@field</i> could not be found (..afterwards removed from Fields section?). Check your settings.', array('@display' => $this->display->display_title, '@field' => $this->options['tabledrag_hierarchy']['field']));
+    else {
+      $found = TRUE;
+    }
+    if ($found) {
+      $tabledrag_order_fields = array();
+      for ($i = 0; $i < count($this->options['tabledrag_order']); $i++) {
+        $field_alias = $this->options['tabledrag_order'][$i]['field'];
+        $tabledrag_order_fields[] = $fields[$field_alias]['label'];
       }
+      $errors[] = t('Display "@display": Draggableviews. You must sort by <i>@fields ascending</i> to display the structure correctly.', array('@display' => $this->display->display_title, '@fields' => implode(', ', $tabledrag_order_fields)));
     }
 
     return $errors;
