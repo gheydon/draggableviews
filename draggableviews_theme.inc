@@ -130,7 +130,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
       //
       // The remaining fields are not used by tabledrag. But - depending
       // on the depth - one of them will simulate the first order field.
-      // (This behavior is based on the fact that tabledrag handles each depth as it was the only one.)
+      // (This behaviour is based on the fact that tabledrag handles each depth as it was the only one.)
 
       // this for loop should prevent copy->paste'ing code
       for ($modus = 'hierarchy'; $modus !== FALSE ; $modus = ($modus == 'hierarchy' ? 'order' : FALSE)) {
@@ -237,14 +237,14 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
   $info     = $view_obj->view->draggableviews_info;
 
   if (user_access('Allow Reordering') && isset($info['hierarchy'])) {
-    // fetch expand information from database
+    // Fetch expand information from database.
     $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid = %d", $user->uid);
     $states = array();
     while ($state = db_fetch_object($result)) {
       $states[$state->parent_nid] = $state->collapsed;
     }
 
-    // check if "expand" links should be shown
+    // Check if "expand" links should be shown.
     if ($info['expand_links']['show']) {
       drupal_add_js(drupal_get_path('module', 'draggableviews') .'/draggableviews.js');
 
@@ -358,7 +358,7 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   // Render Draggable view settings
   // The following lines add the new output from draggableviews
 
-  // build order table
+  // Build order table.
   $tabledrag_order_rows = array();
   $i = 1;
   foreach (element_children($form['tabledrag_order']) AS $id) {
@@ -371,8 +371,14 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   }
   $tabledrag_order_add = drupal_render($form['tabledrag_order_add']);
   $tabledrag_order_visible = drupal_render($form['tabledrag_order_visible']);
+  $description_order = drupal_render($form['tabledrag_description_order']);
 
-  $tabledrag_hierarchy = drupal_render($form['tabledrag_hierarchy']);
+  // Build hierarchy table.
+  $tabledrag_hierarchy_columns = array();
+  $tabledrag_hierarchy_columns[] = 'Parent:';
+  foreach (element_children($form['tabledrag_hierarchy']) AS $col) {
+    $tabledrag_hierarchy_columns[] = drupal_render($form['tabledrag_hierarchy'][$col]);
+  }
   $tabledrag_hierarchy_visible = drupal_render($form['tabledrag_hierarchy_visible']);
   $description_hierarchy = drupal_render($form['tabledrag_description_hierarchy']);
 
@@ -406,10 +412,10 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   // append order settings
   $output .= theme('table', array('&nbsp;', t('Field'), t('Handler'), '&nbsp;'), $tabledrag_order_rows);
   $output .= $tabledrag_order_add;
+  $output .= $description_order;
   $output .= $tabledrag_order_visible;
   // append hierarchy settings
-  $output .= $tabledrag_hierarchy;
-  $output .= $submit_button;
+  $output .= theme('table', array('&nbsp;', t('Field'), t('Handler')), array($tabledrag_hierarchy_columns));
   $output .= $description_hierarchy;
   $output .= $tabledrag_hierarchy_visible;
   // append tabledrag types settings
