@@ -55,6 +55,11 @@
  *       'default_collapsed' => TRUE/FALSE,
  *     ),
  *
+ *     'view_window_extensions' = array(
+ *       'extension_top'    => 3,
+ *       'extension_bottom' => 3,
+ *     ),
+ *
  *     'nodes' => array(
  *       nid1 => array(
  *         'order' => array(
@@ -121,6 +126,10 @@ function _draggableviews_info($view, $info = NULL) {
           drupal_set_message(t('Draggableviews: Handler <i>') . $field['handler'] . t('</i> could not be found.'), 'error');
         }
       }
+
+      $info['view_window_extensions'] = $options['draggableviews_extensions'];
+      if (!isset($info['view_window_extensions']['extension_top'])) $info['view_window_extensions']['extension_top'] = 3;
+      if (!isset($info['view_window_extensions']['extension_bottom'])) $info['view_window_extensions']['extension_bottom'] = 3;
     }
   }
 
@@ -442,7 +451,7 @@ function _draggableviews_ascending_numbers(&$info, $offset = 0, $renumber = FALS
  * @return
  *   An array containing the new, calculated range.
  */
-function _draggableviews_extend_view_window(&$info, $extension_top, $extension_bottom) {
+function _draggableviews_extend_view_window(&$info, $extension_top = NULL, $extension_bottom = NULL) {
   // Check page settings.
   if ($info['pager']['items_per_page'] <= 0) {
     // Nothin to do. Just return the actual range.
@@ -475,6 +484,11 @@ function _draggableviews_extend_view_window(&$info, $extension_top, $extension_b
 
   // If the new index is out of range we'll use the last existing index. Calculate this index:
   $total_index = count($nodes) - 1;
+
+  if (!isset($extension_top) && !isset($extension_bottom)) {
+    $extension_top    = $info['view_window_extensions']['extension_top'];
+    $extension_bottom = $info['view_window_extensions']['extension_bottom'];
+  }
 
   // Extend on top:
   $first_index -= $extension_top;

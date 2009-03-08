@@ -360,6 +360,8 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
 
   // Build order table.
   $tabledrag_order_rows = array();
+  $tabledrag_header      = drupal_render($form['tabledrag_header']);
+  $description_tabledrag = drupal_render($form['tabledrag_description']);
   $i = 1;
   foreach (element_children($form['tabledrag_order']) AS $id) {
     $columns = array();
@@ -394,7 +396,10 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   $tabledrag_types_add = drupal_render($form['tabledrag_types_add']);
   $description_types   = drupal_render($form['tabledrag_description_types']);
 
-  $tabledrag_expand  = drupal_render($form['tabledrag_expand']);
+  $tabledrag_expand = drupal_render($form['tabledrag_expand']);
+
+  $draggableviews_extensions = drupal_render($form['draggableviews_extensions']);
+  $description_extensions    = drupal_render($form['draggableviews_description_extensions']);
 
   // Let extension modules append to the output
   $extensions = array();
@@ -409,23 +414,28 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   // inherited from plugin_table from plugin_draggableviews settings.
   $output .= drupal_render($form);
 
-  // append order settings
+  // Append order settings.
+  $output .= $tabledrag_header;
+  $output .= $description_tabledrag;
+  $output .= $description_order;
   $output .= theme('table', array('&nbsp;', t('Field'), t('Handler'), '&nbsp;'), $tabledrag_order_rows);
   $output .= $tabledrag_order_add;
-  $output .= $description_order;
   $output .= $tabledrag_order_visible;
-  // append hierarchy settings
+  // Append hierarchy settings.
   $output .= theme('table', array('&nbsp;', t('Field'), t('Handler')), array($tabledrag_hierarchy_columns));
   $output .= $description_hierarchy;
   $output .= $tabledrag_hierarchy_visible;
-  // append tabledrag types settings
+  // Append tabledrag types settings.
+  $output .= $description_types;
   $output .= theme('table', array(t('Node type'), t('Type'), '&nbsp;'), $tabledrag_types_rows);
   $output .= $tabledrag_types_add;
-  $output .= $description_types;
-  // append expand yes/no checkbox to output
+  // Append expand yes/no checkbox to output.
   $output .= $tabledrag_expand;
   $output .= $tabledrag_expand_default;
-  // append extension output
+  // Append page extensions output.
+  $output .= $description_extensions;
+  $output .= $draggableviews_extensions;
+  // append extension modules output
   $output .= implode('', $extensions);
 
   // return output

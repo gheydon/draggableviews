@@ -171,7 +171,7 @@ function draggableviews_views_pre_render(&$view) {
     // CASE A) Click sort was used. Assign order values manually.
     _draggableviews_click_sort($info);
     // Try to extend the visible window with the suggested values. The calculated range will be returned.
-    $range = _draggableviews_extend_view_window($info, 3, 3);
+    $range = _draggableviews_extend_view_window($info);
   }
   else {
     // CASE B) Check structure.
@@ -186,7 +186,7 @@ function draggableviews_views_pre_render(&$view) {
     $info['pager']            = $info['view']->pager;
 
     // Try to extend the visible window with the suggested values. The calculated range will be returned.
-    $range = _draggableviews_extend_view_window($info, 3, 3);
+    $range = _draggableviews_extend_view_window($info);
 
     if (!_draggableviews_quick_check_structure($info)) {
       // The structure is broken and has to be repaired. We restore the original page settings now because
@@ -195,7 +195,7 @@ function draggableviews_views_pre_render(&$view) {
 
       _draggableviews_rebuild_hierarchy($info);
       // Try to extend the visible window with the suggested values. The calculated range will be returned.
-      $range = _draggableviews_extend_view_window($info, 3, 3);
+      $range = _draggableviews_extend_view_window($info);
 
       drupal_set_message('The structure was broken. It has been repaired.');
     }

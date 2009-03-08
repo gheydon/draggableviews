@@ -76,7 +76,15 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         $field_alias = $this->options['tabledrag_order'][$i]['field'];
         $tabledrag_order_fields[] = $fields[$field_alias]['label'];
       }
-      $errors[] = t('Display "@display": Draggableviews. You must sort by <i>@fields ascending</i> to display the structure correctly.', array('@display' => $this->display->display_title, '@fields' => implode(', ', $tabledrag_order_fields)));
+      $errors[] = t('Display "@display": Draggableviews: You must sort by <i>@fields ascending</i> to display the structure correctly.', array('@display' => $this->display->display_title, '@fields' => implode(', ', $tabledrag_order_fields)));
+    }
+
+    // Check page extensions.
+    if (!is_numeric($this->options['draggableviews_extensions']['extension_top']) || $this->options['draggableviews_extensions']['extension_top'] < 0) {
+      $errors[] = t('Display "@display": Draggableviews: Number rows of last page must be a numeric value >= 0.', array('@display' => $this->display->display_title));
+    }
+    if (!is_numeric($this->options['draggableviews_extensions']['extension_bottom']) || $this->options['draggableviews_extensions']['extension_bottom'] < 0) {
+      $errors[] = t('Display "@display": Draggableviews: Number rows of previous page must be a numeric value >= 0.', array('@display' => $this->display->display_title));
     }
 
     return $errors;
@@ -107,22 +115,23 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $input = array();
     $input = $form_state['input'];
 
-    // get all system-wide node types as a keyed array
+    // Get all system-wide node types as a keyed array.
     foreach (node_get_types('types') AS $node_type) {
       $node_types[$node_type->type] = $node_type->type;
     }
 
-    $form['tabledrag_hierarchy'] = array();
-    $form['tabledrag_order']     = array();
-    $form['tabledrag_types']     = array();
+    $form['tabledrag_hierarchy']       = array();
+    $form['tabledrag_order']           = array();
+    $form['tabledrag_types']           = array();
+    $form['draggableviews_extensions'] = array();
 
-    // check for input
+    // Check for input.
     if (count($input) > 0) {
-      // define the input data as the current data
+      // Define the input data as the current data.
       $current = $form_state['input']['style_options'];
     }
     else {
-      // define the already stored data as the current data
+      // Define the already stored data as the current data.
       $current = $this->options;
     }
 
@@ -131,15 +140,15 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#suffix' => '</div>',
       '#value' => t('@display: Style options: Draggable Table Settings:', array('@display' => $this->display->display_title)),
     );
-    $form['tabledrag_desription'] = array(
+    $form['tabledrag_description'] = array(
       '#prefix' => '<div class="description form-item">',
       '#suffix' => '</div>',
-      '#value' => t('Within the following section all the <i>Draggable Table</i> settings can be configured. Don\'t be cofused by the options above. This style plugin inherits all options that the table style plugin offers.<br /><br />Draggableviews provides some special fields by default to make the setup easier. They are called <i>Draggableviews: Value #1</i>, <i>Draggableviews: Value #2</i> etc. and can be used for both order fields and parent fields. The number of such items can be specified at the global Draggableviews settings page.'),
+      '#value' => t('Within the following section all the <i>Draggable Table</i> settings can be configured. Don\'t be confused by the options above. This style plugin inherits all options that the table style plugin offers.<br />Draggableviews provides some special fields to make the setup easier. They are called <i>Draggableviews: Value #1</i>, <i>Draggableviews: Value #2</i> etc. and can be used for both order fields and parent fields. The number of such items can be specified at the global Draggableviews settings page.'),
     );
     $form['tabledrag_description_order'] = array(
       '#prefix' => '<div class="description form-item">',
       '#suffix' => '</div>',
-      '#value' => t('In order to make rows of a table draggable at least one order field must be specified. To use hierarchies you must set the parent field and one order field for each level. E.g. to provide a hierarchy with 5 levels you\'ll need to have 5 order fields specified.'),
+      '#value' => t('In order to make rows of a table draggable at least one order field must be specified. To use hierarchies you must set the parent field and one order field for each level. E.g. to provide a hierarchy with 5 levels you need to have 5 order fields specified.'),
     );
     $form['tabledrag_description_hierarchy'] = array(
       '#prefix' => '<div class="description form-item">',
@@ -151,20 +160,25 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#suffix' => '</div>',
       '#value' => t('You can constrain the user when he drags rows.<br />Type "root" cannot be subordinated.<br />Type "leaf" cannot have child nodes.'),
     );
+    $form['draggableviews_description_extensions'] = array(
+      '#prefix' => '<div class="description form-item">',
+      '#suffix' => '</div>',
+      '#value' => t('When you use paging and you want to drag a row from one page to another then you need to show some rows of the previous/next page.'),
+    );
 
-    $options        = _draggableviews_filter_fields(array('number'), $handlers);
+    $options = _draggableviews_filter_fields(array('number'), $handlers);
     $draggableviews_handlers = draggableviews_get_handlers_list();
 
     $first_option   = each($options);
     $first_handler  = each($draggableviews_handlers);
 
 
-    // Build order fields
-    // These fields will be used to store the weight of each hierarchy level
+    // Build order fields.
+    // These fields will be used to store the weight of each hierarchy level.
     $extra_row = isset($input['tabledrag_order_add']) ? TRUE : FALSE;
     for ($i = 0, $index = 0; $i < count($current['tabledrag_order']) + ($extra_row == TRUE ? 1 : 0); $i++) {
 
-      // if option should be deleted, continue loop
+      // If option should be deleted, continue loop.
       if (isset($input['tabledrag_order_del_'. $i])) continue;
 
       $form['tabledrag_order'][$index] = array(
@@ -192,9 +206,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         '#value' => t('Add order field'),
     );
 
-    // TABLEDRAG SHOW/HIDE INPUT FIELDS
-    // Build checkbox
-    // decide whether order input fields should be visible or not
+    // Show or hide input fields.
     $form['tabledrag_order_visible'] = array(
         '#type' => 'checkboxes',
         '#name' => 'tabledrag_order_visible',
@@ -217,9 +229,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       ),
     );
 
-    // TABLEDRAG SHOW/HIDE INPUT FIELDS
-    // Build checkbox
-    // decide whether parent input fields should be visible or not
+    // Show or hide input fields.
     $form['tabledrag_hierarchy_visible'] = array(
         '#type' => 'checkboxes',
         '#name' => 'tabledrag_hierarchy_visible',
@@ -228,8 +238,8 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         '#default_value' => isset($current['tabledrag_hierarchy_visible']) ? $current['tabledrag_hierarchy_visible'] : array(),
     );
 
-    // TABLEDRAG TYPES (ROOT,LEAF)
-    // These fields will save the behaviour of a node-type (root, leaf)
+    // Tabledrag types (root/leafe).
+    // These fields will save the behaviour of a node-type (root, leaf).
     $extra_row = isset($input['tabledrag_types_add']) ? TRUE : FALSE;
     for ($i = 0, $index = 0; $i < count($current['tabledrag_types']) + ($extra_row == TRUE ? 1 : 0); $i++) {
 
@@ -256,21 +266,34 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       $index++;
     }
     $form['tabledrag_types_add'] = array(
-        '#type' => 'button',
-        '#name' => 'tabledrag_types_add',
-        '#value' => t('Add type'),
+      '#type' => 'button',
+      '#name' => 'tabledrag_types_add',
+      '#value' => t('Add type'),
     );
 
-    /* TABLEDRAG EXPAND/COLLAPSE OPTION
-     * Build checkbox
-     * decide if epand links should be shown
-     */
+    // Expand/collapse options.
     $form['tabledrag_expand'] = array(
-        '#type' => 'checkboxes',
-        '#name' => 'tabledrag_expand',
-        '#options' => array('expand_links' => 'Show expand Links?', 'collapsed' => 'default is collapsed'),
-        '#title' => t('Decide whether expand/collapse Links should be shown or not'),
-        '#default_value' => isset($current['tabledrag_expand']) ? $current['tabledrag_expand'] : array('expand_links'),
+      '#type' => 'checkboxes',
+      '#name' => 'tabledrag_expand',
+      '#options' => array('expand_links' => 'Show expand Links?', 'collapsed' => 'default is collapsed'),
+      '#title' => t('Decide whether expand/collapse links should be shown or not'),
+      '#default_value' => isset($current['tabledrag_expand']) ? $current['tabledrag_expand'] : array('expand_links'),
+    );
+
+    // Extensions when using paging.
+    $form['draggableviews_extensions'] = array(
+      'extension_top' => array(
+        '#type' => 'textfield',
+        '#size' => 2,
+        '#title' => t('How many rows should be displayed of the previous page'),
+        '#default_value' => isset($current['draggableviews_extensions']['extension_top']) ? $current['draggableviews_extensions']['extension_top'] : 3,
+      ),
+      'extension_bottom' => array(
+        '#type' => 'textfield',
+        '#size' => 2,
+        '#title' => t('How many rows should be displayed of the next page'),
+        '#default_value' => isset($current['draggableviews_extensions']['extension_bottom']) ? $current['draggableviews_extensions']['extension_bottom'] : 3,
+      ),
     );
 
     // Let extension modules alter the output
