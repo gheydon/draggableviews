@@ -127,24 +127,29 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     }
 
     $form['tabledrag_header'] = array(
-      '#prefix' => '<div class="">',
+      '#prefix' => '<div class="draggableviews-settings-title">',
       '#suffix' => '</div>',
-      '#value' => t('Draggable Table Settings:'),
+      '#value' => t('@display: Style options: Draggable Table Settings:', array('@display' => $this->display->display_title)),
     );
     $form['tabledrag_desription'] = array(
       '#prefix' => '<div class="description form-item">',
       '#suffix' => '</div>',
-      '#value' => t('Specify..'),
+      '#value' => t('Within the following section all the <i>Draggable Table</i> settings can be configured. Don\'t be cofused by the options above. This style plugin inherits all options that the table style plugin offers.<br /><br />Draggableviews provides some special fields by default to make the setup easier. They are called <i>Draggableviews: Value #1</i>, <i>Draggableviews: Value #2</i> etc. and can be used for both order fields and parent fields. The number of such items can be specified at the global Draggableviews settings page.'),
     );
-    $form['tabledrag_description_types'] = array(
+    $form['tabledrag_description_order'] = array(
       '#prefix' => '<div class="description form-item">',
       '#suffix' => '</div>',
-      '#value' => t('Type "root" cannot be subordinated.<br />Type "leaf" cannot have child nodes.<br />Content types with type "root" assigned will own a link to collapse/expand the subordinated nodes (if checked below).'),
+      '#value' => t('In order to make rows of a table draggable at least one order field must be specified. To use hierarchies you must set the parent field and one order field for each level. E.g. to provide a hierarchy with 5 levels you\'ll need to have 5 order fields specified.'),
     );
     $form['tabledrag_description_hierarchy'] = array(
       '#prefix' => '<div class="description form-item">',
       '#suffix' => '</div>',
-      '#value' => t('Choose a nodereference CCK-field if you want to use hierarchies.'),
+      '#value' => t('Set a parent field if you want to use hierarchies.'),
+    );
+    $form['tabledrag_description_types'] = array(
+      '#prefix' => '<div class="description form-item">',
+      '#suffix' => '</div>',
+      '#value' => t('You can constrain the user when he drags rows.<br />Type "root" cannot be subordinated.<br />Type "leaf" cannot have child nodes.'),
     );
 
     $options        = _draggableviews_filter_fields(array('number'), $handlers);
@@ -194,7 +199,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         '#type' => 'checkboxes',
         '#name' => 'tabledrag_order_visible',
         '#options' => array('visible' => 'Show input fields?'),
-        '#title' => t('Decide whether order input fields (e.g. weight, parent) should be visible or not'),
+        '#title' => t('Decide whether order input fields should be visible or not'),
         '#default_value' => isset($current['tabledrag_order_visible']) ? $current['tabledrag_order_visible'] : array(),
     );
 
@@ -219,7 +224,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         '#type' => 'checkboxes',
         '#name' => 'tabledrag_hierarchy_visible',
         '#options' => array('visible' => 'Show input fields?'),
-        '#title' => t('Decide whether parent input fields (e.g. weight, parent) should be visible or not'),
+        '#title' => t('Decide whether parent input fields should be visible or not'),
         '#default_value' => isset($current['tabledrag_hierarchy_visible']) ? $current['tabledrag_hierarchy_visible'] : array(),
     );
 
@@ -273,6 +278,8 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       $function = $module .'_draggableviews_style_plugin_form_alter';
       $function($form, $form_state, $this);
     }
+
+    drupal_add_css(drupal_get_path('module', 'draggableviews') .'/styles.css');
   }
 
   /**
@@ -280,9 +287,14 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
    */
   function render() {
     // We need to wrap around a form to make it possible to submit changes.
-    // Due to the fact that multiple views can be shown on the same page we
-    // need to use an unique form_id for each view. Same views can share the same id
-    // because the concerned views object is the same.
-    return drupal_get_form('draggableviews_view_draggabletable_form_'. $this->view->vid .'_'. $this->view->current_display, $this);
+    // Due to the fact that multiple views can be shown on the same page we need to use
+    // an unique form_id for each view and display. Same displays of the same view can
+    // share the same id because the concerned views object is the same.
+    $form_id = 'draggableviews_view_draggabletable_form_'. $this->view->vid;
+    if (is_numeric($this->view->vid)) {
+      // If the view has already been saved attach the display id to the form id.
+      $form_id .= '_'. $this->view->current_display;
+    }
+    return drupal_get_form($form_id, $this);
   }
 }
