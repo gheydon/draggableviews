@@ -59,6 +59,9 @@ class draggableviews_handler_cck {
         break;
     }
 
+    // If we didn't set $node->date then node_submit() would set it to the current timestamp.
+    $node->date = format_date($node->created, 'custom', 'Y-m-d H:i:s O');
+
     // finally save the node
     if ($node = node_submit($node)) {
       node_save($node);
