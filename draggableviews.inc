@@ -142,7 +142,13 @@ function _draggableviews_info($view, $info = NULL) {
     // loop through all resulting nodes
     foreach ($results as $row) {
       foreach ($info['order']['fields'] as $field) {
-        $info['nodes'][$row->nid]['order'][] = (int)($row->{$field['field_alias']});
+        if (is_numeric($row->{$field['field_alias']})) {
+          $info['nodes'][$row->nid]['order'][] = (int)($row->{$field['field_alias']});
+        }
+        else {
+          // Default position of new nodes.
+          $info['nodes'][$row->nid]['order'][] = variable_get('draggableviews_default_on_top', 1) == 1 ? -1 : 99999;
+        }
       }
       if (isset($info['hierarchy'])) {
         $info['nodes'][$row->nid]['parent'] = (int)($row->{$info['hierarchy']['field']['field_alias']});
