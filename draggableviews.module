@@ -100,15 +100,17 @@ function draggableviews_view_draggabletable_form($form_state, $view) {
   $form['#submit'][] = 'draggableviews_view_draggabletable_form_submit';
   // Use pager information and all exposed input data to build the query.
   $query = 'page='. $view->view->draggableviews_info['pager']['current_page'];
-  foreach ($view->view->exposed_input AS $filter => $data) {
-    if ($filter == 'order') continue;
-    if (is_array($data)) {
-      foreach ($data['value'] AS $key => $value) {
-        $query .= '&'. $filter .'[value]['. $key .']='. $value;
+  if (isset($view->view->exposed_input)) {
+    foreach ($view->view->exposed_input AS $filter => $data) {
+      if ($filter == 'order') continue;
+      if (is_array($data)) {
+        foreach ($data['value'] AS $key => $value) {
+          $query .= '&'. $filter .'[value]['. $key .']='. $value;
+        }
       }
-    }
-    else {
-      $query .= '&'. $filter .'='. $data;
+      else {
+        $query .= '&'. $filter .'='. $data;
+      }
     }
   }
   $form['#redirect'] = array('path' => $_GET['q'], 'query' => $query);

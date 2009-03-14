@@ -27,14 +27,23 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
 
   $query    = tablesort_get_querystring();
   if ($query) {
-    $query = '&'. $query;
+    $query = '&' . $query;
+  }
+
+  // Fields must be rendered in order as of Views 2.3, so we will pre-render
+  // everything.
+  $renders = array();
+  foreach ($result as $count => $row) {
+    foreach ($view->field as $id => $field) {
+      $renders[$count][$id] = $view->field[$id]->theme($row);
+    }
   }
 
   foreach ($columns as $field => $column) {
     // render the header labels
     if ($field == $column && empty($fields[$field]->options['exclude'])) {
       $label = check_plain(!empty($fields[$field]) ? $fields[$field]->label() : '');
-      if (empty($options['info'][$field]['sortable'])) {
+      if (empty($options['info'][$field]['sortable']) || !$fields[$field]->click_sortable()) {
         $vars['header'][$field] = $label;
       }
       else {
@@ -45,14 +54,16 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
           $initial = 'desc';
         }
 
-        $image = theme('tablesort_indicator', $initial);
         $title = t('sort by @s', array('@s' => $label));
+        if ($active == $field) {
+          $label .= theme('tablesort_indicator', $initial);
+        }
         $link_options = array(
-          'html' => TRUE,
+          'html' => true,
           'attributes' => array('title' => $title),
-          'query' => 'order='. urlencode($field) .'&sort='. $initial . $query,
+          'query' => 'order=' . urlencode($field) . '&sort=' . $initial . $query,
         );
-        $vars['header'][$field] = l($label . $image, $_GET['q'], $link_options);
+        $vars['header'][$field] = l($label, $_GET['q'], $link_options);
       }
     }
 
@@ -66,7 +77,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     // Render each field into its appropriate column.
     foreach ($result as $num => $row) {
       if (!empty($fields[$field]) && empty($fields[$field]->options['exclude'])) {
-        $field_output = $fields[$field]->theme($row);
+        $field_output = $renders[$num][$field];
 
         // Don't bother with separators and stuff if the field does not show up.
         if (!isset($field_output) && isset($vars['rows'][$num][$column])) {
@@ -86,6 +97,10 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
         $vars['rows'][$num][$column] .= $field_output;
       }
     }
+  }
+
+  foreach ($vars['rows'] as $num => $row) {
+    $vars['row_classes'][$num][] = ($num % 2 == 0) ? 'odd' : 'even';
   }
 
   $vars['class'] = 'views-table';
