@@ -159,7 +159,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
         if (!user_access('Allow Reordering') || $info['locked']) {
           // The tabledrag js would hide the input fields (depending on the settings). But the
           // tabledrag js will not be added (permissions or locked), so we have to hide the input fields on our own.
-          if (!$info['order']['visible']) {
+          if (!$info[$modus]['visible']) {
             $vars['style'][$field['field_name']] = 'display: none;';
           }
         }
