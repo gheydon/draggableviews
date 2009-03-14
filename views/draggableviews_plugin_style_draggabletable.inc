@@ -25,7 +25,8 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
   }
 
   function validate() {
-    $errors = array();
+    $errors = parent::validate();
+
     if (!isset($this->options['tabledrag_order'])) return $errors;
 
     $fields = $this->view->get_items('field', $this->display->id);
@@ -165,6 +166,11 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#suffix' => '</div>',
       '#value' => t('When you use paging and you want to drag a row from one page to another then you need to show some rows of the previous/next page.'),
     );
+    $form['description_tabledrag_lock'] = array(
+      '#prefix' => '<div class="description form-item">',
+      '#suffix' => '</div>',
+      '#value' => t('If you don\'t wan\'t that the hierarchy can be changed use the following option.'),
+    );
 
     $options = _draggableviews_filter_fields(array('number'), $handlers);
     $draggableviews_handlers = draggableviews_get_handlers_list();
@@ -286,14 +292,23 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         '#type' => 'textfield',
         '#size' => 2,
         '#title' => t('How many rows should be displayed of the previous page'),
-        '#default_value' => isset($current['draggableviews_extensions']['extension_top']) ? $current['draggableviews_extensions']['extension_top'] : 3,
+        '#default_value' => (isset($current['draggableviews_extensions']['extension_top']) && is_numeric($current['draggableviews_extensions']['extension_top'])) ? $current['draggableviews_extensions']['extension_top'] : 3,
       ),
       'extension_bottom' => array(
         '#type' => 'textfield',
         '#size' => 2,
         '#title' => t('How many rows should be displayed of the next page'),
-        '#default_value' => isset($current['draggableviews_extensions']['extension_bottom']) ? $current['draggableviews_extensions']['extension_bottom'] : 3,
+        '#default_value' => (isset($current['draggableviews_extensions']['extension_bottom']) && is_numeric($current['draggableviews_extensions']['extension_bottom'])) ? $current['draggableviews_extensions']['extension_bottom'] : 3,
       ),
+    );
+
+    // Expand/collapse options.
+    $form['tabledrag_lock'] = array(
+      '#type' => 'checkboxes',
+      '#name' => 'tabledrag_lock',
+      '#options' => array('lock' => 'The hierarchy cannot be changed (locked)'),
+      '#title' => t('Lock the hierarchy'),
+      '#default_value' => isset($current['tabledrag_lock']) ? $current['tabledrag_lock'] : array(),
     );
 
     // Let extension modules alter the output

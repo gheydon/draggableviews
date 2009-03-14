@@ -98,7 +98,20 @@ function draggableviews_view_draggabletable_form($form_state, $view) {
     '#value' => t('Save'),
   );
   $form['#submit'][] = 'draggableviews_view_draggabletable_form_submit';
-  $form['#redirect'] = array('path' => $_GET['q'], 'query' => 'page='. $view->view->draggableviews_info['pager']['current_page']);
+  // Use pager information and all exposed input data to build the query.
+  $query = 'page='. $view->view->draggableviews_info['pager']['current_page'];
+  foreach ($view->view->exposed_input AS $filter => $data) {
+    if ($filter == 'order') continue;
+    if (is_array($data)) {
+      foreach ($data['value'] AS $key => $value) {
+        $query .= '&'. $filter .'[value]['. $key .']='. $value;
+      }
+    }
+    else {
+      $query .= '&'. $filter .'='. $data;
+    }
+  }
+  $form['#redirect'] = array('path' => $_GET['q'], 'query' => $query);
   return $form;
 }
 
@@ -169,6 +182,7 @@ function draggableviews_views_pre_render(&$view) {
 
   if ($_GET['order']) {
     // CASE A) Click sort was used. Assign order values manually.
+    $info['pager'] = $info['view']->pager;
     _draggableviews_click_sort($info);
     // Try to extend the visible window with the suggested values. The calculated range will be returned.
     $range = _draggableviews_extend_view_window($info);
@@ -227,6 +241,12 @@ function draggableviews_view_draggabletable_form_submit($vars) {
     return;
   }
 
+  // Check if structure is locked.
+  if ($info['locked']) {
+    drupal_set_message(t('The structure is locked.'), 'error');
+    return;
+  }
+
   // Gather all needed information.
   $view    = $vars['#parameters'][2]->view;
   $results = $view->result;
@@ -234,6 +254,12 @@ function draggableviews_view_draggabletable_form_submit($vars) {
   $info    = $view->draggableviews_info;
 
   if (!isset($info['order'])) return;
+
+  // Check if structure is locked.
+  if ($info['locked']) {
+    drupal_set_message(t('The structure is locked.'), 'error');
+    return;
+  }
 
   // Loop through all resulting nodes.
   foreach ($results AS $row) {
@@ -261,12 +287,12 @@ function draggableviews_view_draggabletable_form_submit($vars) {
       if (ereg('draggableviews_collapsed_', $key)) {
         $parent_nid = drupal_substr($key, 25);
         db_query("DELETE FROM {draggableviews_collapsed}
-                  WHERE uid=%d AND parent_nid=%d",
-                  $user->uid, $parent_nid);
+                  WHERE uid=%d AND parent_nid=%d AND vid=%d",
+                  $user->uid, $parent_nid, $view->vid);
 
         db_query("INSERT INTO {draggableviews_collapsed}
-                  (uid, parent_nid, collapsed) VALUES (%d, %d, %d)",
-                  $user->uid, $parent_nid, $val);
+                  (uid, vid, parent_nid, collapsed) VALUES (%d, %d, %d, %d)",
+                  $user->uid, $view->vid, $parent_nid, $val);
       }
     }
   }

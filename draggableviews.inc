@@ -32,7 +32,7 @@
  *         ),
  *         ..
  *       ),
- *       'visible'       => True/False,
+ *       'visible'       => TRUE/FALSE,
  *     ),
  *
  *     'hierarchy' => array(
@@ -59,6 +59,8 @@
  *       'extension_top'    => 3,
  *       'extension_bottom' => 3,
  *     ),
+ *
+ *     'locked' => TRUE/FALSE,
  *
  *     'nodes' => array(
  *       nid1 => array(
@@ -130,6 +132,8 @@ function _draggableviews_info($view, $info = NULL) {
       $info['view_window_extensions'] = $options['draggableviews_extensions'];
       if (!isset($info['view_window_extensions']['extension_top'])) $info['view_window_extensions']['extension_top'] = 3;
       if (!isset($info['view_window_extensions']['extension_bottom'])) $info['view_window_extensions']['extension_bottom'] = 3;
+
+      $info['locked'] = strcmp($options['tabledrag_lock']['lock'], 'lock') == 0 ? TRUE : FALSE;
     }
   }
 
@@ -474,8 +478,8 @@ function _draggableviews_extend_view_window(&$info, $extension_top = NULL, $exte
   $first_index = $items_per_page * $current_page;
   $last_index  = $items_per_page * ($current_page + 1) - 1;
 
-  // Check permissions.
-  if (!user_access('Allow Reordering')) {
+  // Check permissions and lock.
+  if (!user_access('Allow Reordering') || $info['locked']) {
     // Don't extend view window. Just return the actual range.
     return array(
       'first_index' => $first_index,
@@ -589,6 +593,12 @@ function _draggableviews_click_sort(&$info) {
   // Check permissions.
   if (!user_access('Allow Reordering')) {
     drupal_set_message(t('You are not allowed to reorder nodes.'), 'error');
+    return;
+  }
+
+  // Check if structure is locked.
+  if ($info['locked']) {
+    drupal_set_message(t('The structure is locked.'), 'error');
     return;
   }
 
@@ -799,13 +809,13 @@ function _draggableviews_re_execute_view(&$view, $items_per_page = NULL, $curren
   if (isset($items_per_page)) $view->set_items_per_page($items_per_page);
   if (isset($current_page)) {
     $view->pager['current_page'] = $current_page;
-    // Views pager use global variables where all already known information is dumped in.
+    // Views pager uses global variables where all already known information is dumped in.
     // We need to change the global variable $pager_page_array in order to set the page to 0 because
     // this variable would force the current page to another value. (see views/includes/view.inc:#717, function execute())
     global $pager_page_array;
     $pager_page_array[$view->pager['element']] = $current_page;
   }
-  if (isset($offset))         $view->set_offset($offset);
+  if (isset($offset)) $view->set_offset($offset);
 
   $view->executed = FALSE;
   $view->execute();
@@ -871,3 +881,4 @@ function _draggableviews_compare_nodes($node1, $node2) {
   }
   return 0;
 }
+

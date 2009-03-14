@@ -26,7 +26,7 @@
   <thead>
     <tr>
       <?php foreach ($header as $field => $label): ?>
-        <th class="views-field views-field-<?php print $fields[$field]; ?>">
+        <th class="views-field views-field-<?php print $fields[$field]; ?>"<? if ($style[$field]) print ' style="'. $style[$field] .'"'; ?>>
           <?php print $label; ?>
         </th>
       <?php endforeach ?>
@@ -37,7 +37,7 @@
       <?php $zebra = ($count % 2 == 1) ? 'even' : 'odd'; ?>
       <tr class="draggable <?php print $zebra; ?><? if ($draggableviews_extended[$count]) print ' '. 'draggableviews-extended'; ?><? if ($tabledrag_type[$count]) print ' '. $tabledrag_type[$count]; ?>">
         <?php foreach ($row as $field => $content): ?>
-          <td class="views-field views-field-<?php print $fields[$field]; ?>"><?php
+          <td class="views-field views-field-<?php print $fields[$field]; ?>"<? if ($style[$field]) print ' style="'. $style[$field] .'"'; ?>><?php
             print $content;
           ?></td>
         <?php endforeach; ?>

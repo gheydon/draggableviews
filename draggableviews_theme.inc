@@ -109,76 +109,74 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     // build indentation (as tabledrag requires)
     $indentation = theme('indentation', $info['nodes'][$nid]['depth']);
 
-    if (user_access('Allow Reordering')) {
+    // get node object
+    $node = node_load(array('nid' => $nid));
 
-      // get node object
-      $node = node_load(array('nid' => $nid));
+    if (isset($info['types'][$node->type])) {
+      // set node type specification, if available (e.g. tabledrag-root)
+      $vars['tabledrag_type'][$i] = 'tabledrag-'. $info['types'][$node->type];
+    }
 
-      if (isset($info['types'][$node->type])) {
-        // set node type specification, if available (e.g. tabledrag-root)
-        $vars['tabledrag_type'][$i] = 'tabledrag-'. $info['types'][$node->type];
-      }
+    // Tabledrag needs all concerned fields to be input elements.
+    // The values of the input elements will be changed by tabledrag while
+    // dragging the rows. As we want to use these values we need to
+    // give them names.
+    //
+    // Concerned fields are
+    //  *) the first order field
+    //  *) the parent field (if hierarchy used)
+    //
+    // The remaining fields are not used by tabledrag. But - depending
+    // on the depth - one of them will simulate the first order field.
+    // (This behaviour is based on the fact that tabledrag handles each depth as it was the only one.)
 
-      // Tabledrag needs all concerned fields to be input elements.
-      // The values of the input elements will be changed by tabledrag while
-      // dragging the rows. As we want to use these values we need to
-      // give them names.
-      //
-      // Concerned fields are
-      //  *) the first order field
-      //  *) the parent field (if hierarchy used)
-      //
-      // The remaining fields are not used by tabledrag. But - depending
-      // on the depth - one of them will simulate the first order field.
-      // (This behaviour is based on the fact that tabledrag handles each depth as it was the only one.)
+    // this for loop should prevent copy->paste'ing code
+    for ($modus = 'hierarchy'; $modus !== FALSE ; $modus = ($modus == 'hierarchy' ? 'order' : FALSE)) {
 
-      // this for loop should prevent copy->paste'ing code
-      for ($modus = 'hierarchy'; $modus !== FALSE ; $modus = ($modus == 'hierarchy' ? 'order' : FALSE)) {
+      if (isset($info[$modus])) {
+        if ($modus == 'hierarchy') {
+          $value = $info['nodes'][$nid]['parent'];
 
-        if (isset($info[$modus])) {
-          if ($modus == 'hierarchy') {
-            $value = $info['nodes'][$nid]['parent'];
-
-            // get the field that should be rendered
-            $field = &$info['hierarchy']['field'];
-          }
-          else {
-            // get depth of current field
-            $depth = $info['nodes'][$node->nid]['depth'];
-
-            $value = $info['nodes'][$nid]['order'][$depth];
-
-            // get the field that should be rendered
-            $field = &$info['order']['fields'][0];
-          }
-
-          // get the form element
-          $form_element = $field['handler']->get_form_element($value, array('field_name' => $field['field_name'] .'_'. $nid, 'class' => $field['field_name']));
-
-          // render new form element
-          $vars['rows'][$i][$field['field_name']] = drupal_render($form_element);
+          // get the field that should be rendered
+          $field = &$info['hierarchy']['field'];
         }
-      }
+        else {
+          // get depth of current field
+          $depth = $info['nodes'][$node->nid]['depth'];
 
-      if (isset($info['hierarchy'])) {
-        // append the node id as a hidden field. This is needed
-        // because tabledrag would not know what id to assign when
-        // subordinating.
-        $hidden_nid = array(
-          '#type' => 'hidden',
-          '#name' => 'hidden_nid',
-          '#value' => $nid,
-          '#attributes' => array('class' => 'hidden_nid'),
-        );
-        // append rendered hidden node id to last rendered field
-        $vars['rows'][$i][$field['field_name']] .= drupal_render($hidden_nid);
+          $value = $info['nodes'][$nid]['order'][$depth];
+
+          // get the field that should be rendered
+          $field = &$info['order']['fields'][0];
+        }
+
+        // get the form element
+        $form_element = $field['handler']->get_form_element($value, array('field_name' => $field['field_name'] .'_'. $nid, 'class' => $field['field_name']));
+
+        // render new form element
+        $vars['rows'][$i][$field['field_name']] = drupal_render($form_element);
+
+        if (!user_access('Allow Reordering') || $info['locked']) {
+          // The tabledrag js would hide the input fields (depending on the settings). But the
+          // tabledrag js will not be added (permissions or locked), so we have to hide the input fields on our own.
+          if (!$info['order']['visible']) {
+            $vars['style'][$field['field_name']] = 'display: none;';
+          }
+        }
       }
     }
 
     if (isset($info['hierarchy'])) {
-      // Put indentation in front of first field.
-      $first_field = each($vars['rows'][$i]);
-      $vars['rows'][$i][$first_field['key']] = $indentation . $vars['rows'][$i][$first_field['key']];
+      // Put indentation in front of first field and append rendered hidden node id
+      // that we need for tabledrag and expand/collapse.
+      $hidden_nid = array(
+        '#type' => 'hidden',
+        '#name' => 'hidden_nid',
+        '#value' => $nid,
+        '#attributes' => array('class' => 'hidden_nid'),
+      );
+      $key = key($vars['rows'][$i]);
+      $vars['rows'][$i][$key] = $indentation . $vars['rows'][$i][$key] . drupal_render($hidden_nid);
     }
 
     // Mark extended nodes.
@@ -193,11 +191,11 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     }
   }
 
-  // output data
+  // Output data.
   $vars['tabledrag_table_id'] = 'draggableview_'. $view->name .'_'. $vars['id'];
 
-  if (user_access('Allow Reordering')) {
-    // prepare tabledrag settings for output
+  if (user_access('Allow Reordering') && !$info['locked']) {
+    // Prepare tabledrag settings for output.
     $vars['tabledrag'] = array();
     if (isset($info['order'])) {
       $vars['tabledrag'][] = array(
@@ -220,9 +218,12 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
         'hidden'       => !$info['hierarchy']['visible'],
         'limit'        => count($info['order']['fields']) - 1,
       );
-      // let javascript know about fields
-      drupal_add_js(array('draggableviews' => array('parent' => $info['hierarchy']['field']['field_name'])), 'setting');
     }
+  }
+
+  if (isset($info['hierarchy'])) {
+    // Let javascript know about the parent field.
+    drupal_add_js(array('draggableviews' => array('parent' => $info['hierarchy']['field']['field_name'])), 'setting');
   }
 
   drupal_add_css(drupal_get_path('module', 'draggableviews') .'/styles.css');
@@ -236,9 +237,9 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
   // get structured info array
   $info     = $view_obj->view->draggableviews_info;
 
-  if (user_access('Allow Reordering') && isset($info['hierarchy'])) {
+  if (isset($info['hierarchy'])) {
     // Fetch expand information from database.
-    $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid = %d", $user->uid);
+    $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid=%d AND vid=%d", $user->uid, $view_obj->view->vid);
     $states = array();
     while ($state = db_fetch_object($result)) {
       $states[$state->parent_nid] = $state->collapsed;
@@ -295,8 +296,8 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
   $vars['view'] = $output;
 
   // Render submit form.
-  // Don't render if user has no access or view hasn't been saved yet.
-  if (is_numeric($view_obj->view->vid) && user_access('Allow Reordering')) {
+  // Don't render if user has no access or view hasn't been saved yet or structure is locked.
+  if (is_numeric($view_obj->view->vid) && user_access('Allow Reordering') && !$info['locked']) {
     $vars['submit_form'] =  drupal_render($vars['form']);
   }
   else {
@@ -401,6 +402,9 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   $draggableviews_extensions = drupal_render($form['draggableviews_extensions']);
   $description_extensions    = drupal_render($form['draggableviews_description_extensions']);
 
+  $tabledrag_lock = drupal_render($form['tabledrag_lock']);
+  $description_tabledrag_lock = drupal_render($form['description_tabledrag_lock']);
+
   // Let extension modules append to the output
   $extensions = array();
   foreach (module_implements('draggableviews_style_plugin_render') as $module) {
@@ -435,6 +439,9 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   // Append page extensions output.
   $output .= $description_extensions;
   $output .= $draggableviews_extensions;
+  // Append lock output.
+  $output .= $description_tabledrag_lock;
+  $output .= $tabledrag_lock;
   // append extension modules output
   $output .= implode('', $extensions);
 
