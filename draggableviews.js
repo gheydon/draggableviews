@@ -9,7 +9,7 @@ function draggableviews_load(){
   $("tr.draggable").each( function(i) {
     var nid = $(this).find('td > .hidden_nid').attr('value');
     // append icon only if we find at least one child
-    if ($("tr:has(td > ." + Drupal.settings.draggableviews.parent + "[value="+nid+"])").size()>0) {
+    if ($("tr:has(td > ." + Drupal.settings.draggableviews.parent + "[value="+nid+"])").size() > 0) {
       $(this).find('td:first').each( function(i) {
         $(this).append('<div class="draggableviews-expand" href="#"></div>').children('.draggableviews-expand').bind('click', function(){draggableviews_collapse(nid);});
       });
@@ -114,9 +114,6 @@ function draggableviews_collapse_all() {
       draggableviews_set_state_field(parent_id, true);
     });
   });
-
-  //  $(this).bind('click', function(){ draggableviews_expand(1); });
-  //});
 }
 
 // save state of expanded/collapsed fields in a hidden field
