@@ -254,7 +254,8 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
 
   if (isset($info['hierarchy'])) {
     // Fetch expand information from database.
-    $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid=%d AND vid=%d", $user->uid, $view_obj->view->vid);
+    $uid = $info['expand_links']['by_uid'] ? $user->uid : 0;
+    $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid=%d AND vid=%d", $uid, $view_obj->view->vid);
     $states = array();
     while ($state = db_fetch_object($result)) {
       $states[$state->parent_nid] = $state->collapsed;
