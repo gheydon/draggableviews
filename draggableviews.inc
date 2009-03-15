@@ -427,10 +427,6 @@ function _draggableviews_ascending_numbers(&$info, $offset = 0, $renumber = FALS
       for ($i = 0; $i <= $depth; $i++) {
         $info['nodes'][$nid]['order'][$i] = $last_order[$i];
       }
-      // Set all unused fields to the minimum value.
-      for ($i = $depth + 1; $i < count($info['order']['fields']); $i++) {
-        $info['nodes'][$nid]['order'][$i] = $info['order']['fields'][$i]['handler']->get_minimum_value();
-      }
     }
     else {
       // Check structure.
@@ -671,6 +667,12 @@ function _draggableviews_calculate_depths(&$info) {
       $info['nodes'][$nid]['parent'] = 0;
       $info['nodes'][$nid]['depth'] = 0;
     }
+
+    // Set all unused order fields to the minimum value.
+    $depth = $info['nodes'][$nid]['depth'];
+    for ($i = $depth + 1; $i < count($info['order']['fields']); $i++) {
+      $info['nodes'][$nid]['order'][$i] = $info['order']['fields'][$i]['handler']->get_minimum_value();
+    }
   }
 
   return !$error;
@@ -741,6 +743,18 @@ function _draggableviews_check_order(&$info) {
   foreach ($info['nodes'] as $nid => $prop) {
     if (_draggableviews_check_node_order($nid, $info) == FALSE) {
       $error = TRUE;
+    }
+    else if ($prop['depth'] > 0) {
+      // Set the parent node order of the current level to 0 (B in the example). This should prevent
+      // broken structures caused by "bad nodes" (A in the example) with the same order at the parents level.
+      // B     (0 -1) The parent of C
+      // A     (0 -1) A bad node
+      // --C   (0  1) The child node of B
+      // We take advantage of this when we sort the nodes. _draggableviews_ascending_numbers() will
+      // overwrite this value with the minimum value afterwards.
+      $parent = $prop['parent'];
+      $depth  = $prop['depth'];
+      $info['nodes'][$parent]['order'][$depth] = 0;
     }
   }
 
