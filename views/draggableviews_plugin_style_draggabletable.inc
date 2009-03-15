@@ -137,7 +137,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     }
 
     $form['tabledrag_header'] = array(
-      '#prefix' => '<div class="draggableviews-settings-title">',
+      '#prefix' => '<div style="background: #F6F6F6; border-top: 1px solid #D6DBDE; font-weight: bold; padding: 1em 1em 0;">',
       '#suffix' => '</div>',
       '#value' => t('@display: Style options: Draggable Table Settings:', array('@display' => $this->display->display_title)),
     );
@@ -214,11 +214,11 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
 
     // Show or hide input fields.
     $form['tabledrag_order_visible'] = array(
-        '#type' => 'checkboxes',
-        '#name' => 'tabledrag_order_visible',
-        '#options' => array('visible' => 'Show input fields?'),
-        '#title' => t('Decide whether order input fields should be visible or not'),
-        '#default_value' => isset($current['tabledrag_order_visible']) ? $current['tabledrag_order_visible'] : array(),
+      '#type' => 'checkboxes',
+      '#name' => 'tabledrag_order_visible',
+      '#options' => array('visible' => 'Show input fields?'),
+      '#title' => t('Decide whether order input fields should be visible or not'),
+      '#default_value' => isset($current['tabledrag_order_visible']) ? $current['tabledrag_order_visible'] : array(),
     );
 
     $form['tabledrag_hierarchy'] = array(
@@ -281,7 +281,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['tabledrag_expand'] = array(
       '#type' => 'checkboxes',
       '#name' => 'tabledrag_expand',
-      '#options' => array('expand_links' => 'Show expand Links?', 'collapsed' => 'default is collapsed'),
+      '#options' => array('expand_links' => 'Show expand Links', 'collapsed' => 'Default is collapsed', 'by_uid' => 'Unique for each user'),
       '#title' => t('Decide whether expand/collapse links should be shown or not'),
       '#default_value' => isset($current['tabledrag_expand']) ? $current['tabledrag_expand'] : array('expand_links'),
     );
@@ -316,8 +316,6 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       $function = $module .'_draggableviews_style_plugin_form_alter';
       $function($form, $form_state, $this);
     }
-
-    drupal_add_css(drupal_get_path('module', 'draggableviews') .'/styles.css');
   }
 
   /**
