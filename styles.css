@@ -33,10 +33,3 @@ tr.draggable.even.draggableviews-extended{
   border: dashed #dae1e6;
   border-width: 1px 0;
 }
-
-.draggableviews-settings-title {
-  background: #F6F6F6;
-  border-top: 1px solid #D6DBDE;
-  font-weight: bold;
-  padding: 1em 1em 0;
-}
