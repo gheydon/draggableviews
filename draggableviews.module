@@ -36,15 +36,29 @@ function draggableviews_help($path, $arg) {
 function draggableviews_admin() {
   $form['draggableviews_nmbr_values'] = array(
     '#type' => 'textfield',
-    '#title' => t('Number values'),
+    '#title' => t('Number of views fields'),
     '#default_value' => variable_get('draggableviews_nmbr_values', 3),
     '#size' => 4,
     '#maxlength' => 4,
-    '#description' => t('The number of draggableviews value fields that will be generated'),
-    '#required' => TRUE,
-    '#prefix' => 'The setting above will not take effect until the views cache gets cleared!',
+    '#description' => t('The number of draggableviews value fields that will be exported to views.'),
+    '#required' => FALSE,
   );
-
+  $form['draggableviews_default_on_top'] = array(
+    '#type' => 'radios',
+    '#title' => t('Behaviour of new nodes'),
+    '#default_value' => variable_get('draggableviews_default_on_top', 0),
+    '#description' => t('Nodes without a numerical order value assigned will be treated as new nodes. Decide where they should appear by default.'),
+    '#options' => array(t('On Bottom'), t('On Top')),
+    '#required' => FALSE,
+  );
+  $form['draggableviews_repaired_msg'] = array(
+    '#type' => 'textfield',
+    '#title' => t('The message that appears after a broken structure has been repaired'),
+    '#default_value' => variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.'),
+    '#size' => 50,
+    '#description' => t('Everytime a broken structure has been repaired this message will be shown. Per definition the structure cannot be broken after it has been repaired. Leave blank if you don\'t want to show any message.'),
+    '#required' => FALSE,
+  );
 
   return system_settings_form($form);
 }
@@ -65,8 +79,8 @@ function draggableviews_admin_validate($form, &$form_state) {
 function draggableviews_menu() {
   $items = array();
   $items['admin/settings/draggableviews'] = array(
-    'title' => 'Draggable views settings',
-    'description' => 'Configure settings',
+    'title' => 'DraggableViews',
+    'description' => 'Configure global settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('draggableviews_admin'),
     'access arguments' => array('access administration pages'),
@@ -213,7 +227,9 @@ function draggableviews_views_pre_render(&$view) {
       // Try to extend the visible window with the suggested values. The calculated range will be returned.
       $range = _draggableviews_extend_view_window($info);
 
-      drupal_set_message('The structure was broken. It has been repaired.');
+      if (strlen(variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.')) > 0) {
+        drupal_set_message(variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.'));
+      }
     }
 
     // Restore global views pager variables.
@@ -284,17 +300,18 @@ function draggableviews_view_draggabletable_form_submit($vars) {
   if (isset($info['hierarchy'])) {
     // save expanded/collapsed states.
     global $user;
+    $uid = $info['expand_links']['by_uid'] ? $user->uid : 0;
 
     foreach ($vars['submit']['#post'] AS $key => $val) {
       if (ereg('draggableviews_collapsed_', $key)) {
         $parent_nid = drupal_substr($key, 25);
         db_query("DELETE FROM {draggableviews_collapsed}
                   WHERE uid=%d AND parent_nid=%d AND vid=%d",
-                  $user->uid, $parent_nid, $view->vid);
+                  $uid, $parent_nid, $view->vid);
 
         db_query("INSERT INTO {draggableviews_collapsed}
                   (uid, vid, parent_nid, collapsed) VALUES (%d, %d, %d, %d)",
-                  $user->uid, $view->vid, $parent_nid, $val);
+                  $uid, $view->vid, $parent_nid, $val);
       }
     }
   }
