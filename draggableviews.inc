@@ -53,6 +53,7 @@
  *     'expand_links' = array(
  *       'show'              => TRUE/FALSE,
  *       'default_collapsed' => TRUE/FALSE,
+ *       'unique_for_uid'    => TRUE/FALSE,
  *     ),
  *
  *     'view_window_extensions' = array(
@@ -96,7 +97,7 @@ function _draggableviews_info($view, $info = NULL) {
         }
         else {
           drupal_set_message(t('Draggableviews: Handler <i>') . $field['handler'] . t('</i> could not be found.'), 'error');
-          $info['order'] = array();
+          unset($info['order']);
           return $info;
         }
       }
@@ -122,6 +123,7 @@ function _draggableviews_info($view, $info = NULL) {
           $info['expand_links'] = array(
             'show'              => strcmp($options['tabledrag_expand']['expand_links'], 'expand_links') == 0 ? TRUE : FALSE,
             'default_collapsed' => strcmp($options['tabledrag_expand']['collapsed'], 'collapsed') == 0 ? TRUE : FALSE,
+            'by_uid'            => strcmp($options['tabledrag_expand']['by_uid'], 'by_uid') == 0 ? TRUE : FALSE,
           );
         }
         else {
@@ -478,16 +480,7 @@ function _draggableviews_extend_view_window(&$info, $extension_top = NULL, $exte
   $first_index = $items_per_page * $current_page;
   $last_index  = $items_per_page * ($current_page + 1) - 1;
 
-  // Check permissions and lock.
-  if (!user_access('Allow Reordering') || $info['locked']) {
-    // Don't extend view window. Just return the actual range.
-    return array(
-      'first_index' => $first_index,
-      'last_index' => $last_index,
-    );
-  }
-
-  // Checks are done. Now extend the view window.
+  // Now extend the view window.
   // First of all we need to load the entire view without paging options and reload the info array.
   _draggableviews_reload_info($info, 0, 0, $offset);
   $nodes = $info['nodes'];
@@ -495,7 +488,13 @@ function _draggableviews_extend_view_window(&$info, $extension_top = NULL, $exte
   // If the new index is out of range we'll use the last existing index. Calculate this index:
   $total_index = count($nodes) - 1;
 
-  if (!isset($extension_top) && !isset($extension_bottom)) {
+  // Check permissions and lock.
+  if (!user_access('Allow Reordering') || $info['locked']) {
+    // Don't extend view window.
+    $extension_top    = 0;
+    $extension_bottom = 0;
+  }
+  else if (!isset($extension_top) && !isset($extension_bottom)) {
     $extension_top    = $info['view_window_extensions']['extension_top'];
     $extension_bottom = $info['view_window_extensions']['extension_bottom'];
   }
