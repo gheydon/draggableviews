@@ -53,7 +53,7 @@
  *     'expand_links' = array(
  *       'show'              => TRUE/FALSE,
  *       'default_collapsed' => TRUE/FALSE,
- *       'unique_for_uid'    => TRUE/FALSE,
+ *       'by_uid'            => TRUE/FALSE,
  *     ),
  *
  *     'view_window_extensions' = array(

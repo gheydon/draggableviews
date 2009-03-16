@@ -302,7 +302,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       ),
     );
 
-    // Expand/collapse options.
+    // Lock option.
     $form['tabledrag_lock'] = array(
       '#type' => 'checkboxes',
       '#name' => 'tabledrag_lock',
