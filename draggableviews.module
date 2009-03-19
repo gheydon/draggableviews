@@ -83,7 +83,7 @@ function draggableviews_menu() {
     'description' => 'Configure global settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('draggableviews_admin'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
   );
   return $items;
