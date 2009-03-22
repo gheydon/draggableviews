@@ -60,7 +60,7 @@ function draggableviews_views_handlers() {
 function draggableviews_views_data() {
   $data = array();
 
-  for ($i = 0; $i < variable_get('draggableviews_nmbr_values', 3); $i++) {
+  for ($i = 0; $i < 2; $i++) {
     $data['draggableviews_structure'. $i]['table'] = array(
       'group' => t('Draggableviews'),
       'join' => array(
@@ -81,25 +81,27 @@ function draggableviews_views_data() {
     );
     $data['draggableviews_structure'. $i]['value'. $i] = array(
       'real field' => 'value',
-      'title' => t('Value #'. ($i + 1)),
+      'title' => t($i == 0 ? 'Order' : 'Parent'),
       'field' => array(
         'handler' => 'views_handler_field_draggableviews_structure',
-        'help' => t('This value provided by draggableviews can be used either for order or for parent. It is unique for each view.'),
-        'click sortable' => TRUE,
+        'help' => t('This value provided by draggableviews is unique for each view.'),
+        'click sortable' => $i == 0 ? TRUE : FALSE,
         'draggableviews_delta' => $i,
       ),
-      'sort' => array(
+    );
+    if ($i == 0) {
+      $data['draggableviews_structure'. $i]['value'. $i]['sort'] = array(
         'handler' => 'views_handler_sort_draggableviews_structure',
         'help' => t('Sort by value'),
-      ),
-    );
+      );
+    }
   }
 
   return $data;
 }
 
 function draggableviews_views_query_alter(&$view, &$query) {
-  for ($i = 0; $i < variable_get('draggableviews_nmbr_values', 3); $i++) {
+  for ($i = 0; $i < 2; $i++) {
     if (isset($query->table_queue['draggableviews_structure'. $i])) {
       $query->table_queue['draggableviews_structure'. $i]['join']->extra[] = array(
           'field' => 'vid',
