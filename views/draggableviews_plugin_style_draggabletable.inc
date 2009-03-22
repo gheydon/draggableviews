@@ -32,9 +32,9 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $fields = $this->view->get_items('field', $this->display->id);
 
     // Check if all configured fields are available.
-    foreach ($this->options['tabledrag_order'] as $field) {
-      if (!isset($fields[$field['field']])) {
-        $errors[] = t('Display "@display": Draggableviews: order field <i>@field</i> could not be found (..afterwards removed from Fields section?). Check your settings.', array('@display' => $this->display->display_title, '@field' => $field['field']));
+    if (isset($this->options['tabledrag_order'])) {
+      if ($this->options['tabledrag_order']['field'] != 'none' && !isset($fields[$this->options['tabledrag_order']['field']])) {
+        $errors[] = t('Display "@display": Draggableviews: order field <i>@field</i> could not be found (..afterwards removed from Fields section?). Check your settings.', array('@display' => $this->display->display_title, '@field' => $this->options['tabledrag_order']['field']));
         return $errors;
       }
     }
@@ -48,8 +48,8 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     // Check if first field is draggableviews handled and will be hidden.
     $found = FALSE;
     $first_field = key($fields);
-    for ($i = 0; $i < count($this->options['tabledrag_order']); $i++) {
-      if ($this->options['tabledrag_order'][0]['field'] == $first_field && $this->options['tabledrag_order_visible']['visible'] !== 'visible') $found = TRUE;
+    if (isset($this->options['tabledrag_order'])) {
+      if ($this->options['tabledrag_order']['field'] == $first_field && $this->options['tabledrag_order_visible']['visible'] !== 'visible') $found = TRUE;
     }
     if (isset($this->options['tabledrag_hierarchy'])) {
       if ($this->options['tabledrag_hierarchy']['field'] == $first_field && $this->options['tabledrag_hierarchy_visible']['visible'] !== 'visible') $found = TRUE;
@@ -59,25 +59,20 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     }
 
     // Check sort criteria.
-    $found = FALSE;
-    $sorts = $this->view->get_items('sort', $this->display->id);
-    if (count($sorts) >= count($this->options['tabledrag_order'])) {
+    if (isset($this->options['tabledrag_order']['field']) && $this->options['tabledrag_order']['field'] != 'none') {
+      $field_alias = $this->options['tabledrag_order']['field'];
+      $sorts = $this->view->get_items('sort', $this->display->id);
       $sort = current($sorts);
-      for ($i = 0; $i < count($this->options['tabledrag_order']) && $sort !== FALSE; $i++, $sort = next($sorts)) {
-        $field_alias = $this->options['tabledrag_order'][$i]['field'];
-        if (strcmp($fields[$field_alias]['field'], $sort['field']) != 0 || $sort['order'] == 'DESC') $found = TRUE;
+      if (strcmp($fields[$field_alias]['field'], $sort['field']) != 0 || $sort['order'] == 'DESC') {
+        $tabledrag_order_field = $fields[$field_alias]['label'];
+        $errors[] = t('Display "@display": Draggableviews: You must sort by <i>@fields ascending</i> to display the structure correctly.', array('@display' => $this->display->display_title, '@fields' => $tabledrag_order_field));
       }
     }
-    else {
-      $found = TRUE;
-    }
-    if ($found) {
-      $tabledrag_order_fields = array();
-      for ($i = 0; $i < count($this->options['tabledrag_order']); $i++) {
-        $field_alias = $this->options['tabledrag_order'][$i]['field'];
-        $tabledrag_order_fields[] = $fields[$field_alias]['label'];
-      }
-      $errors[] = t('Display "@display": Draggableviews: You must sort by <i>@fields ascending</i> to display the structure correctly.', array('@display' => $this->display->display_title, '@fields' => implode(', ', $tabledrag_order_fields)));
+
+    // Check depth limit.
+    $limit = $this->options['draggableviews_depth_limit'];
+    if (!(is_numeric($limit) && $limit >= -1)) {
+      $errors[] = t('Depth limit must be a numeric value >= 1');
     }
 
     // Check page extensions.
@@ -175,41 +170,18 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $options = _draggableviews_filter_fields(array('number'), $handlers);
     $draggableviews_handlers = draggableviews_get_handlers_list();
 
-    $first_option   = each($options);
-    $first_handler  = each($draggableviews_handlers);
-
-
-    // Build order fields.
-    // These fields will be used to store the weight of each hierarchy level.
-    $extra_row = isset($input['tabledrag_order_add']) ? TRUE : FALSE;
-    for ($i = 0, $index = 0; $i < count($current['tabledrag_order']) + ($extra_row == TRUE ? 1 : 0); $i++) {
-
-      // If option should be deleted, continue loop.
-      if (isset($input['tabledrag_order_del_'. $i])) continue;
-
-      $form['tabledrag_order'][$index] = array(
-        'field' => array(
-          '#type' => 'select',
-          '#options' => $options,
-          '#value' => isset($current['tabledrag_order'][$i]['field']) ? $current['tabledrag_order'][$i]['field'] : $first_option['key'],
-        ),
-        'handler' => array(
-          '#type' => 'select',
-          '#options' => $draggableviews_handlers,
-          '#value' => isset($current['tabledrag_order'][$i]['handler']) ? $current['tabledrag_order'][$i]['handler'] : $first_handler['key'],
-        ),
-        'del' => array(
-          '#type' => 'button',
-          '#name' => 'tabledrag_order_del_'. $index,
-          '#value' => t('Delete'),
-        ),
-      );
-      $index++;
-    }
-    $form['tabledrag_order_add'] = array(
-        '#type' => 'button',
-        '#name' => 'tabledrag_order_add',
-        '#value' => t('Add order field'),
+    $form['tabledrag_order'] = array(
+      '#weight' => 9,
+      'field' => array(
+        '#type' => 'select',
+        '#options' => array('none' => 'none') + _draggableviews_filter_fields(array('order'), $handlers),
+        '#value' => isset($current['tabledrag_order']['field']) ? $current['tabledrag_order']['field'] : 'none',
+      ),
+      'handler' => array(
+        '#type' => 'select',
+        '#options' => $draggableviews_handlers,
+        '#value' => isset($current['tabledrag_order']['handler']) ? $current['tabledrag_order']['handler'] : key($draggableviews_handlers),
+      ),
     );
 
     // Show or hide input fields.
@@ -231,7 +203,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       'handler' => array(
         '#type' => 'select',
         '#options' => $draggableviews_handlers,
-        '#value' => isset($current['tabledrag_hierarchy']['handler']) ? $current['tabledrag_hierarchy']['handler'] : $first_handler['key'],
+        '#value' => isset($current['tabledrag_hierarchy']['handler']) ? $current['tabledrag_hierarchy']['handler'] : key($draggableviews_handlers),
       ),
     );
 
@@ -242,6 +214,14 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         '#options' => array('visible' => 'Show input fields?'),
         '#title' => t('Decide whether parent input fields should be visible or not'),
         '#default_value' => isset($current['tabledrag_hierarchy_visible']) ? $current['tabledrag_hierarchy_visible'] : array(),
+    );
+
+    $form['draggableviews_depth_limit'] = array(
+      '#type' => 'textfield',
+      '#size' => 2,
+      '#description' => 'Only use this option in combination with hierarchies. Type -1 for no limit.',
+      '#title' => t('Define the depth limit'),
+      '#default_value' => (isset($current['draggableviews_depth_limit']) && is_numeric($current['draggableviews_depth_limit'])) ? $current['draggableviews_depth_limit'] : -1,
     );
 
     // Tabledrag types (root/leafe).
@@ -309,6 +289,15 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#options' => array('lock' => 'The hierarchy cannot be changed (locked)'),
       '#title' => t('Lock the hierarchy'),
       '#default_value' => isset($current['tabledrag_lock']) ? $current['tabledrag_lock'] : array(),
+    );
+
+    $form['draggableviews_default_on_top'] = array(
+      '#type' => 'radios',
+      '#name' => 'draggableviews_default_on_top',
+      '#title' => t('Behaviour of new nodes'),
+      '#default_value' => isset($current['draggableviews_default_on_top']) ? $current['draggableviews_default_on_top'] : 1,
+      '#description' => t('Nodes without a numerical order value assigned will be treated as new nodes. Decide where they should appear by default.'),
+      '#options' => array(t('On Bottom'), t('On Top')),
     );
 
     // Let extension modules alter the output

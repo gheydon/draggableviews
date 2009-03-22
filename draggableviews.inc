@@ -24,13 +24,10 @@
  *     'view' => view,
  *
  *     'order' => array(
- *       'fields' => array(
- *         0 => array(
- *           'field_name'  => field_name,
- *           'field_alias' => field_alias,
- *           'handler'     => handler,
- *         ),
- *         ..
+ *       'field' => array(
+ *         'field_name'  => field_name,
+ *         'field_alias' => field_alias,
+ *         'handler'     => handler,
  *       ),
  *       'visible'       => TRUE/FALSE,
  *     ),
@@ -43,6 +40,8 @@
  *       ),
  *       'visible' => TRUE/FALSE,
  *     ),
+ *
+ *     'depth_limit' => depth_limit,
  *
  *     'types' = array(
  *       node_type1 => "root"/"leaf",
@@ -62,6 +61,10 @@
  *     ),
  *
  *     'locked' => TRUE/FALSE,
+ *
+ *     'depth'  => 0,
+ *
+ *     'default_on_top' => TRUE/FALSE,
  *
  *     'nodes' => array(
  *       nid1 => array(
@@ -86,33 +89,37 @@ function _draggableviews_info($view, $info = NULL) {
     $info = array();
 
     // extract draggableviews settings.
-    if (isset($options['tabledrag_order'])) {
-      foreach ($options['tabledrag_order'] as $field) {
-        if ($handler = _draggableviews_init_handler($field, $view)) {
-          $info['order']['fields'][] = array(
-            'handler' => $handler,
-            'field_name' => $field['field'],
-            'field_alias' => $fields[$field['field']]->field_alias,
-          );
-        }
-        else {
-          drupal_set_message(t('Draggableviews: Handler <i>') . $field['handler'] . t('</i> could not be found.'), 'error');
-          unset($info['order']);
-          return $info;
-        }
+    if ($options['tabledrag_order']['field'] != 'none') {
+      if ($handler = _draggableviews_init_handler($options['tabledrag_order'], $view)) {
+        $info['order'] = array(
+          'field' => array(
+            'handler'     => $handler,
+            'field_name'  => $options['tabledrag_order']['field'],
+            'field_alias' => $fields[$options['tabledrag_order']['field']]->field_alias,
+          ),
+          'visible' => strcmp($options['tabledrag_order_visible']['visible'], 'visible') == 0 ? TRUE : FALSE,
+        );
+      }
+      else {
+        drupal_set_message(t('Draggableviews: Handler <i>') . $options['tabledrag_order']['handler'] . t('</i> could not be found.'), 'error');
+        unset($info['order']);
+        return $info;
       }
       $info['order']['visible'] = strcmp($options['tabledrag_order_visible']['visible'], 'visible') == 0 ? TRUE : FALSE;
 
-      if (count($info['order']['fields']) >= 2 && $options['tabledrag_hierarchy']['field'] != 'none') {
+      if ($options['tabledrag_hierarchy']['field'] != 'none') {
         if ($handler = _draggableviews_init_handler($options['tabledrag_hierarchy'], $view)) {
           $info['hierarchy'] = array(
             'field' => array(
-              'handler' => $handler,
-              'field_name' => $options['tabledrag_hierarchy']['field'],
+              'handler'     => $handler,
+              'field_name'  => $options['tabledrag_hierarchy']['field'],
               'field_alias' => $fields[$options['tabledrag_hierarchy']['field']]->field_alias,
             ),
             'visible' => strcmp($options['tabledrag_hierarchy_visible']['visible'], 'visible') == 0 ? TRUE : FALSE,
           );
+
+          $info['depth_limit'] = $options['draggableviews_depth_limit'];
+          if (!isset($info['depth_limit'])) $info['depth_limit'] = 10;
 
           if (isset($options['tabledrag_types'])) {
             foreach ($options['tabledrag_types'] as $type) {
@@ -127,7 +134,7 @@ function _draggableviews_info($view, $info = NULL) {
           );
         }
         else {
-          drupal_set_message(t('Draggableviews: Handler <i>') . $field['handler'] . t('</i> could not be found.'), 'error');
+          drupal_set_message(t('Draggableviews: Handler <i>') . $options['tabledrag_hierarchy']['handler'] . t('</i> could not be found.'), 'error');
         }
       }
 
@@ -139,6 +146,10 @@ function _draggableviews_info($view, $info = NULL) {
     }
   }
 
+  $info['depth'] = 0;
+
+  $info['default_on_top'] = $options['draggableviews_default_on_top'] == 1 ? TRUE : FALSE;
+
   // Hold a reference of the view object itself.
   $info['view'] = &$view;
 
@@ -147,14 +158,12 @@ function _draggableviews_info($view, $info = NULL) {
   if (isset($info['order'])) {
     // loop through all resulting nodes
     foreach ($results as $row) {
-      foreach ($info['order']['fields'] as $field) {
-        if (is_numeric($row->{$field['field_alias']})) {
-          $info['nodes'][$row->nid]['order'][] = (int)($row->{$field['field_alias']});
-        }
-        else {
-          // Default position of new nodes.
-          $info['nodes'][$row->nid]['order'][] = variable_get('draggableviews_default_on_top', 1) == 1 ? -1 : 99999;
-        }
+      if (is_numeric($row->{$info['order']['field']['field_alias']})) {
+        $info['nodes'][$row->nid]['order'][0] = (int)($row->{$info['order']['field']['field_alias']});
+      }
+      else {
+        // Default position of new nodes.
+        $info['nodes'][$row->nid]['order'][0] = $info['default_on_top'] == 1 ? -1 : 99999;
       }
       if (isset($info['hierarchy'])) {
         $info['nodes'][$row->nid]['parent'] = (int)($row->{$info['hierarchy']['field']['field_alias']});
@@ -269,7 +278,7 @@ function _draggableviews_build_hierarchy(&$info) {
       $nodes[$nid]['parent'] = $input[$nid]['parent'];
     }
 
-    // Now set all unused weights to a minimum value. Otherwise
+    // Now set the next level to the minimum value. Otherwise
     // it could happen that a child appears above its parent.
     // The ? can be anything, unfortunately also > 5
     //
@@ -281,13 +290,11 @@ function _draggableviews_build_hierarchy(&$info) {
 
     $depth = ($depth == -1) ? 0 : $depth;
 
-    for ($i = $depth + 1; $i < count($info['order']['fields']); $i++) {
-      $nodes[$nid]['order'][$i] = $info['order']['fields'][$i]['handler']->get_minimum_value();
-      $nodes[$nid]['depth']     = $depth;
-    }
+    $nodes[$nid]['order'][$depth + 1] = $info['order']['field']['handler']->get_minimum_value();
+    $nodes[$nid]['depth']             = $depth;
   }
 
-  // Last but not least sort nodes and assign ascending numbers. This is necessary since this module supports paging.
+  // Last but not least sort nodes and finally assign ascending numbers. This is necessary since this module supports paging.
   _draggableviews_sort_nodes($nodes);
   // calculate views page offset
   $pager  = $info['view']->pager;
@@ -363,11 +370,11 @@ function _draggableviews_rebuild_hierarchy(&$info) {
 function _draggableviews_ascending_numbers(&$info, $offset = 0, $renumber = FALSE) {
   // We need to hold
   //  1)  the last nid,
-  //  2)  the last order value of each hierarchy level,
+  //  2)  the last order value,
   //  3)  the parent's nid of each hierarchy level,
   //  3a) the current depth (hierarchy level),
   $last_nid        = -1;
-  $last_order      = array($offset);
+  $last_order      = $offset;
   $last_parent_nid = array(0);
   $depth           = 0;
 
@@ -395,19 +402,14 @@ function _draggableviews_ascending_numbers(&$info, $offset = 0, $renumber = FALS
     if ($leave_hierarchy_levels > 0) {
       // We leave some hierarchy levels. We simply inherit the order value of the level we come from.
       $depth -= $leave_hierarchy_levels;
-      $last_order[$depth] = $last_order[$depth + $leave_hierarchy_levels];
       // Remove obsoleted values from stack.
       for ($i = 0; $i < $leave_hierarchy_levels; $i++) {
         array_pop($last_parent_nid);
-        array_pop($last_order);
       }
     }
     else if ($parent_nid == $last_nid) {
       // We are entering a new level. This is the first child of the last node.
       array_push($last_parent_nid, $last_nid);
-      array_push($last_order, $last_order[$depth]);
-      // Hold the previous order value of the last level.
-      $last_order[$depth]--;
       $depth++;
     }
     else if ($parent_nid != $last_parent_nid[$depth]) {
@@ -423,15 +425,13 @@ function _draggableviews_ascending_numbers(&$info, $offset = 0, $renumber = FALS
 
     // This function is used for both renumbering and checking the hierarchy. Decide what we have to do:
     if ($renumber) {
-      // Assign all order values.
-      for ($i = 0; $i <= $depth; $i++) {
-        $info['nodes'][$nid]['order'][$i] = $last_order[$i];
-      }
+      // Assign order value.
+      $info['nodes'][$nid]['order'][0] = $last_order;
     }
     else {
       // Check structure.
-      $order = $values['order'][$depth];
-      if ($order != $last_order[$depth]) {
+      $order = $values['order'][0];
+      if ($order != $last_order) {
         // This would cause troubles with paging.
         // We better initiate a rebuild!
         return FALSE;
@@ -439,7 +439,7 @@ function _draggableviews_ascending_numbers(&$info, $offset = 0, $renumber = FALS
     }
 
     $last_nid = $nid;
-    $last_order[$depth]++;
+    $last_order++;
   }
 
   return TRUE;
@@ -634,12 +634,9 @@ function _draggableviews_save_hierarchy($info) {
       $handler->save($nid, $value);
     }
 
-    for ($i = 0; $i < count($info['order']['fields']); $i++) {
-      // Loop through all order fields.
-      $value   = $prop['order'][$i];
-      $handler = $info['order']['fields'][$i]['handler'];
-      $handler->save($nid, $value);
-    }
+    $value   = $prop['order'][0];
+    $handler = $info['order']['field']['handler'];
+    $handler->save($nid, $value);
   }
 }
 
@@ -660,19 +657,24 @@ function _draggableviews_calculate_depths(&$info) {
   // Loop through all rows the view returned.
   foreach ($info['nodes'] as $nid => $prop) {
     // Determine hierarchy depth of current row.
-    $info['nodes'][$nid]['depth'] = _draggableviews_get_hierarchy_depth($nid, $info['nodes'], $info);
+    $depth = _draggableviews_get_hierarchy_depth($nid, $info['nodes'], $info);
 
-    if ($info['nodes'][$nid]['depth'] === FALSE) {
+    if ($depth === FALSE) {
       $error = TRUE;
+      $depth = 0;
       $info['nodes'][$nid]['parent'] = 0;
-      $info['nodes'][$nid]['depth'] = 0;
     }
 
-    // Set all unused order fields to the minimum value.
-    $depth = $info['nodes'][$nid]['depth'];
-    for ($i = $depth + 1; $i < count($info['order']['fields']); $i++) {
-      $info['nodes'][$nid]['order'][$i] = $info['order']['fields'][$i]['handler']->get_minimum_value();
-    }
+    $info['nodes'][$nid]['depth'] = $depth;
+
+    // Move the order value to the calculated level.
+    $info['nodes'][$nid]['order'][$depth] = $info['nodes'][$nid]['order'][0];
+
+    // Set the next level to the minimum value. Otherwise
+    // it could happen that a child appears above its parent.
+    $info['nodes'][$nid]['order'][$depth + 1] = $info['order']['field']['handler']->get_minimum_value();
+
+    if ($depth > $info['depth']) $info['depth'] = $depth;
   }
 
   return !$error;
@@ -735,30 +737,23 @@ function _draggableviews_get_hierarchy_depth($nid, $nodes, $info) {
  * @param $info
  *   The structured information array. Look at _draggableviews_info(..) to learn more.
  *
- * @return
- *   TRUE if no error occured.
  */
 function _draggableviews_check_order(&$info) {
-  $error = FALSE;
   foreach ($info['nodes'] as $nid => $prop) {
-    if (_draggableviews_check_node_order($nid, $info) == FALSE) {
-      $error = TRUE;
-    }
-    else if ($prop['depth'] > 0) {
+    _draggableviews_check_node_order($nid, $info);
+
+    if ($prop['depth'] > 0) {
       // Set the parent node order of the current level to 0 (B in the example). This should prevent
       // broken structures caused by "bad nodes" (A in the example) with the same order at the parents level.
       // B     (0 -1) The parent of C
       // A     (0 -1) A bad node
       // --C   (0  1) The child node of B
-      // We take advantage of this when we sort the nodes. _draggableviews_ascending_numbers() will
-      // overwrite this value with the minimum value afterwards.
+      // We take advantage of this when we sort the nodes.
       $parent = $prop['parent'];
       $depth  = $prop['depth'];
       $info['nodes'][$parent]['order'][$depth] = 0;
     }
   }
-
-  return $error;
 }
 
 /**
@@ -772,8 +767,6 @@ function _draggableviews_check_order(&$info) {
  * @param $info
  *   The structured information array. Look at _draggableviews_info(..) to learn more.
  *
- * @return
- *   TRUE if no errors were found.
  */
 function _draggableviews_check_node_order($nid, &$info) {
   $error = FALSE;
@@ -783,15 +776,10 @@ function _draggableviews_check_node_order($nid, &$info) {
 
   for ($i = $nodes[$nid]['depth'] - 1; $i >= 0; $i--) {
     // We're operating top-down, so we determine the parents nid by the way.
-    if ($nodes[$nid]['order'][$i] != $nodes[$temp_nid]['order'][$i]) {
-      $nodes[$nid]['order'][$i] = $nodes[$temp_nid]['order'][$i];
-      $error = TRUE;
-    }
+    $nodes[$nid]['order'][$i] = $nodes[$temp_nid]['order'][$i];
 
     $temp_nid = $nodes[$temp_nid]['parent'];
   }
-
-  return !$error;
 }
 
 /**

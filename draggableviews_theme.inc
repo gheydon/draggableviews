@@ -162,7 +162,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
           $value = $info['nodes'][$nid]['order'][$depth];
 
           // get the field that should be rendered
-          $field = &$info['order']['fields'][0];
+          $field = &$info['order']['field'];
         }
 
         // get the form element
@@ -216,9 +216,9 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
       $vars['tabledrag'][] = array(
         'action'       => 'order',
         'relationship' => 'sibling',
-        'source'       => $info['order']['fields'][0]['field_name'],
-        'group'        => $info['order']['fields'][0]['field_name'],
-        'subgroup'     => $info['order']['fields'][0]['field_name'],
+        'source'       => $info['order']['field']['field_name'],
+        'group'        => $info['order']['field']['field_name'],
+        'subgroup'     => $info['order']['field']['field_name'],
         'hidden'       => !$info['order']['visible'],
         'limit'        => 0,
       );
@@ -231,7 +231,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
         'group'        => $info['hierarchy']['field']['field_name'],
         'subgroup'     => $info['hierarchy']['field']['field_name'],
         'hidden'       => !$info['hierarchy']['visible'],
-        'limit'        => count($info['order']['fields']) - 1,
+        'limit'        => $info['depth_limit'],
       );
     }
   }
@@ -376,19 +376,11 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   // The following lines add the new output from draggableviews
 
   // Build order table.
-  $tabledrag_order_rows = array();
-  $tabledrag_header      = drupal_render($form['tabledrag_header']);
-  $description_tabledrag = drupal_render($form['tabledrag_description']);
-  $i = 1;
-  foreach (element_children($form['tabledrag_order']) AS $id) {
-    $columns = array();
-    $columns[] = 'Level '. $i++;
-    foreach (element_children($form['tabledrag_order'][$id]) AS $col) {
-      $columns[] = drupal_render($form['tabledrag_order'][$id][$col]);
-    }
-    $tabledrag_order_rows[] = $columns;
+  $tabledrag_order_columns = array();
+  $tabledrag_order_columns[] = 'Order Field:';
+  foreach (element_children($form['tabledrag_order']) AS $col) {
+    $tabledrag_order_columns[] = drupal_render($form['tabledrag_order'][$col]);
   }
-  $tabledrag_order_add = drupal_render($form['tabledrag_order_add']);
   $tabledrag_order_visible = drupal_render($form['tabledrag_order_visible']);
   $description_order = drupal_render($form['tabledrag_description_order']);
 
@@ -400,6 +392,8 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   }
   $tabledrag_hierarchy_visible = drupal_render($form['tabledrag_hierarchy_visible']);
   $description_hierarchy = drupal_render($form['tabledrag_description_hierarchy']);
+
+  $draggableviews_depth_limit = drupal_render($form['draggableviews_depth_limit']);
 
   // build types table
   $tabledrag_types_rows = array();
@@ -421,6 +415,8 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   $tabledrag_lock = drupal_render($form['tabledrag_lock']);
   $description_tabledrag_lock = drupal_render($form['description_tabledrag_lock']);
 
+  $draggableviews_default_on_top = drupal_render($form['draggableviews_default_on_top']);
+
   // Let extension modules append to the output
   $extensions = array();
   foreach (module_implements('draggableviews_style_plugin_render') as $module) {
@@ -438,13 +434,15 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   $output .= $tabledrag_header;
   $output .= $description_tabledrag;
   $output .= $description_order;
-  $output .= theme('table', array('&nbsp;', t('Field'), t('Handler'), '&nbsp;'), $tabledrag_order_rows);
+  $output .= theme('table', array('&nbsp;', t('Field'), t('Handler')), array($tabledrag_order_columns));
   $output .= $tabledrag_order_add;
   $output .= $tabledrag_order_visible;
   // Append hierarchy settings.
   $output .= theme('table', array('&nbsp;', t('Field'), t('Handler')), array($tabledrag_hierarchy_columns));
   $output .= $description_hierarchy;
   $output .= $tabledrag_hierarchy_visible;
+  // Append depth limit textfield to output.
+  $output .= $draggableviews_depth_limit;
   // Append tabledrag types settings.
   $output .= $description_types;
   $output .= theme('table', array(t('Node type'), t('Type'), '&nbsp;'), $tabledrag_types_rows);
@@ -458,6 +456,8 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   // Append lock output.
   $output .= $description_tabledrag_lock;
   $output .= $tabledrag_lock;
+  // Append default behaviour radios.
+  $output .= $draggableviews_default_on_top;
   // append extension modules output
   $output .= implode('', $extensions);
 

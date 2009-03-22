@@ -34,23 +34,6 @@ function draggableviews_help($path, $arg) {
  * Implementing hook_admin
  */
 function draggableviews_admin() {
-  $form['draggableviews_nmbr_values'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Number of views fields'),
-    '#default_value' => variable_get('draggableviews_nmbr_values', 3),
-    '#size' => 4,
-    '#maxlength' => 4,
-    '#description' => t('The number of draggableviews value fields that will be exported to views.'),
-    '#required' => FALSE,
-  );
-  $form['draggableviews_default_on_top'] = array(
-    '#type' => 'radios',
-    '#title' => t('Behaviour of new nodes'),
-    '#default_value' => variable_get('draggableviews_default_on_top', 0),
-    '#description' => t('Nodes without a numerical order value assigned will be treated as new nodes. Decide where they should appear by default.'),
-    '#options' => array(t('On Bottom'), t('On Top')),
-    '#required' => FALSE,
-  );
   $form['draggableviews_repaired_msg'] = array(
     '#type' => 'textfield',
     '#title' => t('The message that appears after a broken structure has been repaired'),
@@ -61,16 +44,6 @@ function draggableviews_admin() {
   );
 
   return system_settings_form($form);
-}
-
-/**
- * Implementing hook_validate
- */
-function draggableviews_admin_validate($form, &$form_state) {
-  $value = $form_state['values']['draggableviews_nmbr_values'];
-  if (!is_numeric($value) OR $value < 0) {
-    drupal_set_message('Invalid value (not numeric, not >= 0)', 'error');
-  }
 }
 
 /**
@@ -243,10 +216,8 @@ function draggableviews_views_pre_render(&$view) {
   // Calculate depth values. These values will be used for theming.
   _draggableviews_calculate_depths($info);
 
-  // Finally we set the selectable options of the order fields.
-  for ($i = 0; $i < count($info['order']['fields']); $i++) {
-    $info['order']['fields'][$i]['handler']->set_range($range['first_index'], $range['last_index']);
-  }
+  // Finally we set the selectable options of the order field.
+  $info['order']['field']['handler']->set_range($range['first_index'], $range['last_index']);
 }
 
 /**
@@ -282,10 +253,10 @@ function draggableviews_view_draggabletable_form_submit($vars) {
   // Loop through all resulting nodes.
   foreach ($results AS $row) {
     // set order values
-    if (isset($info['order']['fields'])) {
+    if (isset($info['order']['field'])) {
       // The input array must have the same structure as the node array.
       // E.g. because of _draggableviews_get_hierarchy_depth(..).
-      $info['input'][$row->nid]['order'][0] = $input[$info['order']['fields'][0]['field_name'] .'_'. $row->nid];
+      $info['input'][$row->nid]['order'][0] = $input[$info['order']['field']['field_name'] .'_'. $row->nid];
     }
     // Set parent values.
     if (isset($info['hierarchy'])) {
