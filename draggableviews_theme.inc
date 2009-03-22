@@ -241,21 +241,10 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     drupal_add_js(array('draggableviews' => array('parent' => $info['hierarchy']['field']['field_name'])), 'setting');
   }
 
-  drupal_add_css(drupal_get_path('module', 'draggableviews') .'/styles.css');
-}
-
-function template_preprocess_draggableviews_view_draggabletable_form($vars) {
-  global $user;
-
-  // get view object
-  $view_obj = $vars['form']['#parameters'][2];
-  // get structured info array
-  $info     = $view_obj->view->draggableviews_info;
-
   if (isset($info['hierarchy'])) {
     // Fetch expand information from database.
     $uid = $info['expand_links']['by_uid'] ? $user->uid : 0;
-    $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid=%d AND vid=%d", $uid, $view_obj->view->vid);
+    $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid=%d AND vid=%d", $uid, $view->vid);
     $states = array();
     while ($state = db_fetch_object($result)) {
       $states[$state->parent_nid] = $state->collapsed;
@@ -269,7 +258,9 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
         // let js know whether child nodes should be expanded or not
         drupal_add_js(array(
                         'draggableviews' => array(
-                          'expand_default' =>  $options['tabledrag_expand']['collapsed'] ? 1 : 0,
+                           $vars['tabledrag_table_id'] => array(
+                            'expand_default' =>  $options['tabledrag_expand']['collapsed'] ? 1 : 0,
+                           ),
                         ),
                       ),
                       'setting');
@@ -277,13 +268,26 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
       else {
         drupal_add_js(array(
                         'draggableviews' => array(
-                          'states' => $states,
+                          $vars['tabledrag_table_id'] => array(
+                            'states' => $states,
+                          ),
                         ),
                       ),
                       'setting');
       }
     }
   }
+
+  drupal_add_css(drupal_get_path('module', 'draggableviews') .'/styles.css');
+}
+
+function template_preprocess_draggableviews_view_draggabletable_form($vars) {
+  global $user;
+
+  // get view object
+  $view_obj = $vars['form']['#parameters'][2];
+  // get structured info array
+  $info     = $view_obj->view->draggableviews_info;
 
   if ($view_obj->uses_row_plugin() && empty($view_obj->row_plugin)) {
       vpr('views_plugin_style_default: Missing row plugin');

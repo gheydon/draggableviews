@@ -1,39 +1,43 @@
-//check js availability
+// Check js availability.
 if (Drupal.jsEnabled) {
-  //start at onload-event
+  // Start at onload-event.
   $(document).ready(draggableviews_load);
 }
 
-//load editfield-plugin
+// Load editfield-plugin.
 function draggableviews_load(){
-  $("tr.draggable").each( function(i) {
-    var nid = $(this).find('td > .hidden_nid').attr('value');
-    // append icon only if we find at least one child
-    if ($("tr:has(td > ." + Drupal.settings.draggableviews.parent + "[value="+nid+"])").size() > 0) {
-      $(this).find('td:first').each( function(i) {
-        $(this).append('<div class="draggableviews-expand" href="#"></div>').children('.draggableviews-expand').bind('click', function(){draggableviews_collapse(nid);});
-      });
-    }
+  $("table.tabledrag-processed").each( function(i) {
+    var table_id = $(this).attr('id');
 
-    // apply collapsed/expanded state
-    if (Drupal.settings.draggableviews.states) {
-      if (Drupal.settings.draggableviews.states[nid]) {
-        // when list should be collapsed..
-        if (Drupal.settings.draggableviews.states[nid] == 1) {
-          // ..collapse list
-          draggableviews_collapse(nid);
-          
-          // and set hidden field
-          draggableviews_set_state_field(nid, true);
-        }
-      } 
-    }
+    $("tr.draggable").each( function(i) {
+      var nid = $(this).find('td > .hidden_nid').attr('value');
+      // append icon only if we find at least one child
+      if ($("tr:has(td > ." + Drupal.settings.draggableviews.parent + "[value="+nid+"])").size() > 0) {
+        $(this).find('td:first').each( function(i) {
+          $(this).append('<div class="draggableviews-expand" href="#"></div>').children('.draggableviews-expand').bind('click', function(){draggableviews_collapse(nid);});
+        });
+      }
+
+      // Apply collapsed/expanded state.
+      if (Drupal.settings.draggableviews[table_id]) {
+        if (Drupal.settings.draggableviews[table_id].states) {
+          if (Drupal.settings.draggableviews[table_id].states[nid]) {
+            // When list should be collapsed..
+            if (Drupal.settings.draggableviews[table_id].states[nid] == 1) {
+              // ..collapse list.
+              draggableviews_collapse(nid);
+
+              // ..and set hidden field.
+              draggableviews_set_state_field(nid, true);
+            }
+          }
+        } 
+      }
+    });
   });
   
   // collapse all by default if set
-  if( Drupal.settings.draggableviews.expand_default &&
-      Drupal.settings.draggableviews.expand_default == 1 )
-  {
+  if( Drupal.settings.draggableviews.expand_default && Drupal.settings.draggableviews.expand_default == 1 ) {
     draggableviews_collapse_all();
   }
 }
