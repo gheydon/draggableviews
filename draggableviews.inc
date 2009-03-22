@@ -656,6 +656,8 @@ function _draggableviews_calculate_depths(&$info) {
 
   // Loop through all rows the view returned.
   foreach ($info['nodes'] as $nid => $prop) {
+    if ($info['nodes'][$nid]['parent'] < 0) $info['nodes'][$nid]['parent'] = 0;
+    
     // Determine hierarchy depth of current row.
     $depth = _draggableviews_get_hierarchy_depth($nid, $info['nodes'], $info);
 
