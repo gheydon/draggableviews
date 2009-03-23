@@ -151,6 +151,11 @@ function draggableviews_theme() {
  * In both cases extend the visible window if paging is beeing used.
  */
 function draggableviews_views_pre_render(&$view) {
+  if ($view->style_plugin->definition['handler'] != 'draggableviews_plugin_style_draggabletable') {
+    // This view doesn't use draggable_table style plugin. Nothing to do.
+    return;
+  }
+
   // Get info array.
   $info = _draggableviews_info($view);
 
