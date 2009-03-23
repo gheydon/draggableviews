@@ -139,12 +139,12 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['tabledrag_description'] = array(
       '#prefix' => '<div class="description form-item">',
       '#suffix' => '</div>',
-      '#value' => t('Within the following section all the <i>Draggable Table</i> settings can be configured. Don\'t be confused by the options above. This style plugin inherits all options that the table style plugin offers.<br />Draggableviews provides some special fields to make the setup easier. They are called <i>Draggableviews: Value #1</i>, <i>Draggableviews: Value #2</i> etc. and can be used for both order fields and parent fields. The number of such items can be specified at the global Draggableviews settings page.'),
+      '#value' => t('Within the following section all the <i>Draggable Table</i> settings can be configured. Don\'t be confused by the options above. This style plugin inherits all options that the table style plugin offers.<br />Draggableviews provides two special fields to ease your life. They are called <i>Draggableviews: Order</i> and <i>Draggableviews: Parent</i>. These fields are designed to be used in combination with the "Native" handler.'),
     );
     $form['tabledrag_description_order'] = array(
       '#prefix' => '<div class="description form-item">',
       '#suffix' => '</div>',
-      '#value' => t('In order to make rows of a table draggable at least one order field must be specified. To use hierarchies you must set the parent field and one order field for each level. E.g. to provide a hierarchy with 5 levels you need to have 5 order fields specified.'),
+      '#value' => t('In order to make rows of a table draggable the order field must be specified. To use hierarchies you must set the parent field.'),
     );
     $form['tabledrag_description_hierarchy'] = array(
       '#prefix' => '<div class="description form-item">',
