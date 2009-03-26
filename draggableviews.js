@@ -9,6 +9,8 @@ function draggableviews_load(){
   $("table.tabledrag-processed").each( function(i) {
     var table_id = $(this).attr('id');
 
+    if (!Drupal.settings.draggableviews[table_id]) return;
+
     $(this).find("tr.draggable").each( function(i) {
       var nid = $(this).find('td > .hidden_nid').attr('value');
       // append icon only if we find at least one child
