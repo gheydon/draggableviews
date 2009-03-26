@@ -155,7 +155,7 @@ function _draggableviews_info($view, $info = NULL) {
 
   // Get all nodes and their properties.
   $info['nodes'] = array();
-  if (isset($info['order'])) {
+  if (isset($info['order']) && isset($results) && count($results) > 0) {
     // loop through all resulting nodes
     foreach ($results as $row) {
       if (is_numeric($row->{$info['order']['field']['field_alias']})) {
@@ -163,7 +163,7 @@ function _draggableviews_info($view, $info = NULL) {
       }
       else {
         // Default position of new nodes.
-        $info['nodes'][$row->nid]['order'][0] = $info['default_on_top'] == 1 ? -1 : 99999;
+        $info['nodes'][$row->nid]['order'][0] = $info['default_on_top'] == 1 ? -1 : $view->total_rows;
       }
       if (isset($info['hierarchy'])) {
         $info['nodes'][$row->nid]['parent'] = (int)($row->{$info['hierarchy']['field']['field_alias']});
@@ -346,9 +346,6 @@ function _draggableviews_rebuild_hierarchy(&$info) {
   if (!_draggableviews_quick_check_structure($info)) {
     drupal_set_message("Draggableviews: Rebuilding structure didn't work. The structure is broken.", "error");
   }
-
-  // Re-execute view with original page settings.
-  _draggableviews_reload_info($info, $backup_pager['items_per_page'], $backup_pager['current_page'], $backup_pager['offset']);
 }
 
 /**
@@ -450,47 +447,57 @@ function _draggableviews_ascending_numbers(&$info, $offset = 0, $renumber = FALS
  *
  * In order to make it possible to drag from one page to another we have to extend the visible window of each page.
  * We also have to make sure that parent nodes appear with all their children (..and child nodes with their parent).
+ * The view will be re-executed with the calculated range, based on the suggested range.
  *
  * @param $info
  *   The structured info array. Look at _draggableviews_info(..) to learn more.
- * @param $offset_top
- * @param $offset_bottom
+ * @param $extension_top
+ * @param $extension_bottom
  *
  * @return
  *   An array containing the new, calculated range.
  */
-function _draggableviews_extend_view_window(&$info, $extension_top = NULL, $extension_bottom = NULL) {
+function _draggableviews_extend_view_window(&$info, $reload = FALSE) {
   // Check page settings.
   if ($info['pager']['items_per_page'] <= 0) {
-    // Nothin to do. Just return the actual range.
+    // Nothing to do. Just return the actual range.
     return array(
       'first_index' => 0,
       'last_index' => count($info['view']->result) - 1,
     );
   }
 
-  $items_per_page = $info['view']->pager['items_per_page'];
-  $current_page   = $info['view']->pager['current_page'];
-  $offset         = $info['view']->pager['offset'];
+  // Notice that we have two sets of pager information:
+  // - The "should-be" values at $info['pager']
+  // - The real, current values at $view->pager.
+  // For building the new view we always use the "should-be" pager information.
+
+  $items_per_page = $info['pager']['items_per_page'];
+  $current_page   = $info['pager']['current_page'];
+  $offset         = $info['pager']['offset'];
 
   $first_index = $items_per_page * $current_page;
   $last_index  = $items_per_page * ($current_page + 1) - 1;
 
-  // Now extend the view window.
-  // First of all we need to load the entire view without paging options and reload the info array.
-  _draggableviews_reload_info($info, 0, 0, $offset);
   $nodes = $info['nodes'];
 
   // If the new index is out of range we'll use the last existing index. Calculate this index:
-  $total_index = count($nodes) - 1;
+  $current_first_index = $info['view']->pager['items_per_page'] * $info['view']->pager['current_page'] + $info['view']->pager['offset'];
+  $total_index = $current_first_index + count($nodes) - 1;
+
+  if ($first_index > $total_index) {
+    // $first_index is out of range.
+    $first_index = 0;
+    $last_index  = $items_per_page -1;
+  }
 
   // Check permissions and lock.
   if (!user_access('Allow Reordering') || $info['locked']) {
-    // Don't extend view window.
+    // Don't extend view window (= suggestion).
     $extension_top    = 0;
     $extension_bottom = 0;
   }
-  else if (!isset($extension_top) && !isset($extension_bottom)) {
+  else {
     $extension_top    = $info['view_window_extensions']['extension_top'];
     $extension_bottom = $info['view_window_extensions']['extension_bottom'];
   }
@@ -511,6 +518,9 @@ function _draggableviews_extend_view_window(&$info, $extension_top = NULL, $exte
     $last_index = $total_index;
   }
 
+  $add_to_extension_top    = 0;
+  $add_to_extension_bottom = 0;
+
   if (isset($info['hierarchy'])) {
     // There are possibly some child nodes that would be cut of their parents. To avoid this we localize
     // the next parents (if needed) and use their index for the range. To analyze the nodes array we slice out
@@ -524,9 +534,6 @@ function _draggableviews_extend_view_window(&$info, $extension_top = NULL, $exte
     $nodes_after   = array_slice($nodes, $last_index + 1, NULL, TRUE);
     // Slice out all nodes that are currently shown:
     $nodes_current = array_slice($nodes, $first_index, $last_index - $first_index + 1, TRUE);
-
-    $add_to_extension_top    = 0;
-    $add_to_extension_bottom = 0;
 
     $first_node = current($nodes_current);
     if ($first_node['parent'] > 0) {
@@ -550,9 +557,11 @@ function _draggableviews_extend_view_window(&$info, $extension_top = NULL, $exte
     $last_index  += $add_to_extension_bottom;
   }
 
-  // Finally we re-execute the view an reload the info array. We need to add 1 to the number of items
-  // to show (e.g. show from index 5 to index 5: show 5-5+1=1 item).
-  _draggableviews_reload_info($info, $last_index - $first_index + 1, 0, $offset + $first_index);
+  if ($reload) {
+    // Re-execute the view and reload the info array. We need to add 1 to the number of items
+    // to show (e.g. show from index 5 to index 5: show 5-5+1=1 item).
+    _draggableviews_reload_info($info, $last_index - $first_index + 1, 0, $offset + $first_index);
+  }
 
   // Mark extended nodes as "extension".
   $nodes = &$info['nodes'];
@@ -809,7 +818,7 @@ function _draggableviews_reload_info(&$info, $items_per_page = NULL, $current_pa
  * @param $offset
  */
 function _draggableviews_re_execute_view(&$view, $items_per_page = NULL, $current_page = NULL, $offset = NULL) {
-  if (isset($items_per_page)) $view->set_items_per_page($items_per_page);
+  if (isset($items_per_page)) $view->pager['items_per_page'] = $items_per_page;
   if (isset($current_page)) {
     $view->pager['current_page'] = $current_page;
     // Views pager uses global variables where all already known information is dumped in.
@@ -818,7 +827,7 @@ function _draggableviews_re_execute_view(&$view, $items_per_page = NULL, $curren
     global $pager_page_array;
     $pager_page_array[$view->pager['element']] = $current_page;
   }
-  if (isset($offset)) $view->set_offset($offset);
+  if (isset($offset)) $view->pager['offset'] = $offset;
 
   $view->executed = FALSE;
   $view->execute();

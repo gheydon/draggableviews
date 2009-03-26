@@ -138,6 +138,88 @@ function draggableviews_theme() {
 }
 
 /**
+ * Implementing hook_views_pre_execute
+ * 
+ * We use this hook to extend the view window before it gets executed.
+ * In hook_pre_render we afterwards check for the correctness
+ * and re-execute the view if needed.
+ */
+function draggableviews_views_pre_execute(&$view) {
+  if ($view->style_plugin->definition['handler'] != 'draggableviews_plugin_style_draggabletable') {
+    // This view doesn't use draggable_table style plugin. Nothing to do.
+    return;
+  }
+
+  if (!is_numeric($view->vid)) {
+    // The view hasn't been saved yet. Can't do anything.
+    return;
+  }
+
+  if (isset($view->draggableviews_info)) {
+    // Don't fall in an infinit recursion when the view gets re-executed.
+    return;
+  }
+
+  // Get info array.
+  $info = _draggableviews_info($view);
+
+  if (!isset($info['order'])) {
+    // Nothing to do.
+    return;
+  }
+
+  // Attach the info array to the view object.
+  // We need to use a reference because the info array will change.
+  $view->draggableviews_info = &$info;
+
+  // We want the view to execute the count query. New nodes which should be added to the very end will use this value.
+  $view->get_total_rows = TRUE;
+
+  $info['pager'] = $info['view']->pager;
+
+  if ($info['pager']['items_per_page'] > 0) {
+    // Paging is beeing used. We modifiy some paging settings before the views gets executed.
+
+    // We let views think that the current page is 0, but we also backup the actual value. We
+    // will restore it after finishing all operations (see hook_views_pre_render).
+    $info['globals']['page'] = $_GET['page'];
+    $pager_page_array = isset($_GET['page']) ? explode(',', $_GET['page']) : array();
+    if (!empty($pager_page_array[$info['pager']['element']]) && $pager_page_array[$info['pager']['element']] > 0) {
+      $info['pager']['current_page'] = intval($pager_page_array[$info['pager']['element']]);
+    }
+    else {
+      $info['pager']['current_page'] = 0;
+    }
+    $pager_page_array[$info['pager']['element']] = 0;
+    // Change the _GET variable.
+    $_GET['page'] = implode(',', $pager_page_array);
+
+    if (isset($info['hierarchy'])) {
+      // In order to find hidden parents or child nodes we need to load the entire view.
+      // To induce that the entire view gets loaded we set to items_per_page to 0.
+      $info['view']->pager['items_per_page'] = 0;
+      // Permissions checks cannot be done right now because the window probably must be extended
+      // even if the user doesn't have permissions.
+    }
+    else {
+      // When we deal with simple lists permission checks must be done right now (differently to hierarchies).
+      if (user_access('Allow Reordering') && !$info['locked']) {
+        // We just extend the visible window.
+        $first_index  = ($info['pager']['current_page'] * $info['pager']['items_per_page']);
+        $last_index   = $first_index + $info['pager']['items_per_page'] - 1;
+        // Add extensions.
+        $first_index -= $info['view_window_extensions']['extension_top'];
+        $last_index  += $info['view_window_extensions']['extension_bottom'];
+        if ($first_index < 0) $first_index = 0;
+
+        $info['view']->pager['items_per_page'] = $last_index - $first_index + 1;
+        $info['view']->pager['offset']         = $first_index + $info['pager']['offset'];
+      }
+    }
+  }
+}
+
+/**
  * Imlpementing hook_views_pre_render
  * 
  * We distinguish between two cases A and B:
@@ -151,71 +233,70 @@ function draggableviews_theme() {
  * In both cases extend the visible window if paging is beeing used.
  */
 function draggableviews_views_pre_render(&$view) {
-  if ($view->style_plugin->definition['handler'] != 'draggableviews_plugin_style_draggabletable') {
-    // This view doesn't use draggable_table style plugin. Nothing to do.
+  if (!isset($view->draggableviews_info)) {
+    // No info array has been appended. Nothing to do.
     return;
   }
 
-  // Get info array.
-  $info = _draggableviews_info($view);
+  // Initialize info array with the results of the executed view object.
+  $view->draggableviews_info = _draggableviews_info($view, $view->draggableviews_info);
+  $info = &$view->draggableviews_info;
 
-  // Attach the info array to the view object,
-  // so we don't have to build it again when the theme function is called.
-  // We need to use a reference because the info array may change.
-  $view->draggableviews_info = &$info;
-
-  if (!isset($info['order'])) {
-    // Nothing to do.
-    return;
-  }
-
-  if (!is_numeric($view->vid)) {
-    // The view hasn't been saved yet. Can't do anything.
-    return;
+  if (!$info['hierarchy']) {
+    // The current page of hierarchies cannot be checked here because $views->total_rows will not be
+    // calculated when the entire view gets loaded.
+    if ($info['pager']['current_page'] * $info['pager']['items_per_page'] >= $view->total_rows + $view->pager['offset']) {
+      // The current page is out of range.
+      return;
+    }
   }
 
   if ($_GET['order']) {
     // CASE A) Click sort was used. Assign order values manually.
-    $info['pager'] = $info['view']->pager;
+
     _draggableviews_click_sort($info);
-    // Try to extend the visible window with the suggested values. The calculated range will be returned.
-    $range = _draggableviews_extend_view_window($info);
+    // The entire view is loaded at the moment. We try to extend the visible window with the suggested
+    // values and reload the view. The calculated range will be returned.
+    $range = _draggableviews_extend_view_window($info, TRUE);
   }
   else {
-    // CASE B) Check structure.
-    global $pager_page_array, $pager_total, $pager_total_items;
-    // Views pager use global variables which are going to be changed in order when we
-    // extend the visible window. As we don't want to change the pager status we backup these values now and
-    // restore them after completing all page related operations.
-    $backup_pager_page_array  = $pager_page_array;
-    $backup_pager_total       = $pager_total;
-    $backup_pager_total_items = $pager_total_items;
-    // We'll later need the original pager settings for redirecting and in case of a rebuild.
-    $info['pager']            = $info['view']->pager;
+    // CASE B) Extend view and check structure.
 
-    // Try to extend the visible window with the suggested values. The calculated range will be returned.
-    $range = _draggableviews_extend_view_window($info);
+  	if ($info['hierarchy']) {
+  	  // Extend views window and reload view.
+  	  $range = _draggableviews_extend_view_window($info, TRUE);
+  	}
+  	else {
+      // Extend views window, but don't reload view.
+      $range = _draggableviews_extend_view_window($info, FALSE);
+  	}
 
     if (!_draggableviews_quick_check_structure($info)) {
       // The structure is broken and has to be repaired. We restore the original page settings now because
       // the current settings are based on a broken structure.
       $info['view']->pager = $info['pager'];
-
+      // Rebuild the view.
       _draggableviews_rebuild_hierarchy($info);
       // Try to extend the visible window with the suggested values. The calculated range will be returned.
-      $range = _draggableviews_extend_view_window($info);
+      $range = _draggableviews_extend_view_window($info, TRUE);
 
       if (strlen(variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.')) > 0) {
         drupal_set_message(variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.'));
       }
     }
+  }
 
-    // Restore global views pager variables.
-    $pager_page_array  = $backup_pager_page_array;
-    $pager_total       = $backup_pager_total;
-    $pager_total_items = $backup_pager_total_items;
-    // Restore use_pager that was set to FALSE when calling view->set_items_per_page(0).
-    $info['view']->pager['use_pager'] = $info['pager']['use_pager'];
+  if ($info['pager']['items_per_page'] > 0) {
+    global $pager_page_array, $pager_total, $pager_total_items;
+    // The global $pager_total variable was calculated with wrong values because we changed the
+    // global $_GET['page'] and $view->pager['items_per_page'] variable in hook_pre_execute.
+    $pager_total[$info['pager']['element']] = ceil(($info['view']->total_rows + $range['first_index']) / $info['pager']['items_per_page']);
+    // Restore the global variable.
+    $pager_page_array[$info['pager']['element']] = $info['pager']['current_page'];
+    // Restore the pager settings.
+    $info['view']->pager = $info['pager'];
+    // Restore the _GET variable.
+    $_GET['page'] = $info['globals']['page'];
   }
 
   // Calculate depth values. These values will be used for theming.
