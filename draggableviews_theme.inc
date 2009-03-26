@@ -237,11 +237,6 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
   }
 
   if (isset($info['hierarchy'])) {
-    // Let javascript know about the parent field.
-    drupal_add_js(array('draggableviews' => array('parent' => $info['hierarchy']['field']['field_name'])), 'setting');
-  }
-
-  if (isset($info['hierarchy'])) {
     // Fetch expand information from database.
     $uid = $info['expand_links']['by_uid'] ? $user->uid : 0;
     $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid=%d AND vid=%d", $uid, $view->vid);
@@ -253,6 +248,16 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     // Check if "expand" links should be shown.
     if ($info['expand_links']['show']) {
       drupal_add_js(drupal_get_path('module', 'draggableviews') .'/draggableviews.js');
+
+      // Let javascript know about the parent field.
+      drupal_add_js(array(
+                      'draggableviews' => array(
+                        $vars['tabledrag_table_id'] => array(
+                          'parent' => $info['hierarchy']['field']['field_name'],
+                        ),
+                      ),
+                    ),
+                    'setting');
 
       if (empty($states)) {
         // let js know whether child nodes should be expanded or not
