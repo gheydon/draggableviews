@@ -86,13 +86,20 @@ function draggableviews_view_draggabletable_form($form_state, $view) {
   );
   $form['#submit'][] = 'draggableviews_view_draggabletable_form_submit';
   // Use pager information and all exposed input data to build the query.
-  $query = 'page='. $view->view->draggableviews_info['pager']['current_page'];
+  $query = 'page='. $_GET['page'];
   if (isset($view->view->exposed_input)) {
     foreach ($view->view->exposed_input AS $filter => $data) {
       if ($filter == 'order') continue;
       if (is_array($data)) {
-        foreach ($data['value'] AS $key => $value) {
-          $query .= '&'. $filter .'[value]['. $key .']='. $value;
+        foreach ($data AS $key1 => $value1) {
+          if (is_array($value1)) {
+            foreach ($value1 AS $key2 => $value2) {
+              $query .= '&'. $filter .'['. $key1 .']['. $key2 .']='. $value2;
+            }
+          }
+          else {
+            $query .= '&'. $filter .'['. $key1 .']='. $value1;
+          }
         }
       }
       else {
@@ -293,8 +300,6 @@ function draggableviews_views_pre_render(&$view) {
     $pager_total[$info['pager']['element']] = ceil(($info['view']->total_rows + $range['first_index']) / $info['pager']['items_per_page']);
     // Restore the global variable.
     $pager_page_array[$info['pager']['element']] = $info['pager']['current_page'];
-    // Restore the pager settings.
-    $info['view']->pager = $info['pager'];
     // Restore the _GET variable.
     $_GET['page'] = $info['globals']['page'];
   }
