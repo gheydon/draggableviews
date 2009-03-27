@@ -818,7 +818,9 @@ function _draggableviews_reload_info(&$info, $items_per_page = NULL, $current_pa
  * @param $offset
  */
 function _draggableviews_re_execute_view(&$view, $items_per_page = NULL, $current_page = NULL, $offset = NULL) {
-  if (isset($items_per_page)) $view->pager['items_per_page'] = $items_per_page;
+  if (isset($items_per_page)) {
+    $view->pager['items_per_page'] = $items_per_page;
+  }
   if (isset($current_page)) {
     $view->pager['current_page'] = $current_page;
     // Views pager uses global variables where all already known information is dumped in.
