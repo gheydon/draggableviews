@@ -6,7 +6,7 @@ if (Drupal.jsEnabled) {
 
 // Load editfield-plugin.
 function draggableviews_load(){
-  $("table.tabledrag-processed").each( function(i) {
+  $("table.views-table").each( function(i) {
     var table_id = $(this).attr('id');
 
     if (!Drupal.settings.draggableviews[table_id]) return;
