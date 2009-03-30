@@ -49,10 +49,17 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $found = FALSE;
     $first_field = key($fields);
     if (isset($this->options['tabledrag_order'])) {
-      if ($this->options['tabledrag_order']['field'] == $first_field && $this->options['tabledrag_order_visible']['visible'] !== 'visible') $found = TRUE;
+      if ($this->options['tabledrag_order']['field'] == $first_field && $this->options['tabledrag_order_visible']['visible'] !== 'visible') {
+        $found = TRUE;
+      }
     }
     if (isset($this->options['tabledrag_hierarchy'])) {
-      if ($this->options['tabledrag_hierarchy']['field'] == $first_field && $this->options['tabledrag_hierarchy_visible']['visible'] !== 'visible') $found = TRUE;
+      if ($this->options['tabledrag_hierarchy']['field'] == $first_field && $this->options['tabledrag_hierarchy_visible']['visible'] !== 'visible') {
+        $found = TRUE;
+      }
+    }
+    if ($fields[$first_field]['exclude']) {
+      $found = TRUE;
     }
     if ($found) {
       $errors[] = t('Display "@display": Draggableviews: The drag-handles will be attached to the first field. But the currently configured first field will not be shown. Move the currently configured first field to another position or choose <i>Show input fields?</i> on the settings page.', array('@display' => $this->display->display_title));
@@ -174,7 +181,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#weight' => 9,
       'field' => array(
         '#type' => 'select',
-        '#options' => array('none' => 'none') + _draggableviews_filter_fields(array('order'), $handlers),
+        '#options' => array('none' => t('none')) + _draggableviews_filter_fields(array('order'), $handlers),
         '#value' => isset($current['tabledrag_order']['field']) ? $current['tabledrag_order']['field'] : 'none',
       ),
       'handler' => array(
@@ -188,7 +195,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['tabledrag_order_visible'] = array(
       '#type' => 'checkboxes',
       '#name' => 'tabledrag_order_visible',
-      '#options' => array('visible' => 'Show input fields?'),
+      '#options' => array('visible' => t('Show input fields?')),
       '#title' => t('Decide whether order input fields should be visible or not'),
       '#default_value' => isset($current['tabledrag_order_visible']) ? $current['tabledrag_order_visible'] : array(),
     );
@@ -197,7 +204,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#weight' => 10,
       'field' => array(
         '#type' => 'select',
-        '#options' => array('none' => 'none') + _draggableviews_filter_fields(array('nodereference'), $handlers),
+        '#options' => array('none' => t('none')) + _draggableviews_filter_fields(array('nodereference'), $handlers),
         '#value' => isset($current['tabledrag_hierarchy']['field']) ? $current['tabledrag_hierarchy']['field'] : 'none',
       ),
       'handler' => array(
@@ -211,7 +218,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['tabledrag_hierarchy_visible'] = array(
         '#type' => 'checkboxes',
         '#name' => 'tabledrag_hierarchy_visible',
-        '#options' => array('visible' => 'Show input fields?'),
+        '#options' => array('visible' => t('Show input fields?')),
         '#title' => t('Decide whether parent input fields should be visible or not'),
         '#default_value' => isset($current['tabledrag_hierarchy_visible']) ? $current['tabledrag_hierarchy_visible'] : array(),
     );
@@ -219,7 +226,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['draggableviews_depth_limit'] = array(
       '#type' => 'textfield',
       '#size' => 2,
-      '#description' => 'Only use this option in combination with hierarchies. Type -1 for no limit.',
+      '#description' => t('Only use this option in combination with hierarchies. Type -1 for no limit.'),
       '#title' => t('Define the depth limit'),
       '#default_value' => (isset($current['draggableviews_depth_limit']) && is_numeric($current['draggableviews_depth_limit'])) ? $current['draggableviews_depth_limit'] : -1,
     );
@@ -286,7 +293,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['tabledrag_lock'] = array(
       '#type' => 'checkboxes',
       '#name' => 'tabledrag_lock',
-      '#options' => array('lock' => 'The hierarchy cannot be changed (locked)'),
+      '#options' => array('lock' => t('The hierarchy cannot be changed (locked)')),
       '#title' => t('Lock the hierarchy'),
       '#default_value' => isset($current['tabledrag_lock']) ? $current['tabledrag_lock'] : array(),
     );
