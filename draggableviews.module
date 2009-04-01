@@ -249,7 +249,7 @@ function draggableviews_views_pre_render(&$view) {
   $view->draggableviews_info = _draggableviews_info($view, $view->draggableviews_info);
   $info = &$view->draggableviews_info;
 
-  if (!$info['hierarchy']) {
+  if ($info['pager']['items_per_page'] > 0 && !$info['hierarchy']) {
     // The current page of hierarchies cannot be checked here because $views->total_rows will not be
     // calculated when the entire view gets loaded.
     if ($info['pager']['current_page'] * $info['pager']['items_per_page'] >= $view->total_rows + $view->pager['offset']) {
