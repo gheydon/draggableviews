@@ -3,5 +3,5 @@ name = DraggableViews CCK Implementation
 description = Provides CCK-support for order fields
 dependencies[] = draggableviews
 dependencies[] = content
-package = views
+package = Views
 core = 6.x
