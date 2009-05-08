@@ -1,11 +1,4 @@
-// Check js availability.
-if (Drupal.jsEnabled) {
-  // Start at onload-event.
-  $(document).ready(draggableviews_load);
-}
-
-// Load editfield-plugin.
-function draggableviews_load(){
+Drupal.behaviors.draggableviewsLoad = function() {
   $("table.views-table").each( function(i) {
     var table_id = $(this).attr('id');
 
