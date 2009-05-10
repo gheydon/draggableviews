@@ -182,12 +182,12 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       'field' => array(
         '#type' => 'select',
         '#options' => array('none' => t('none')) + _draggableviews_filter_fields(array('order'), $handlers),
-        '#value' => isset($current['tabledrag_order']['field']) ? $current['tabledrag_order']['field'] : 'none',
+        '#default_value' => isset($current['tabledrag_order']['field']) ? $current['tabledrag_order']['field'] : 'none',
       ),
       'handler' => array(
         '#type' => 'select',
         '#options' => $draggableviews_handlers,
-        '#value' => isset($current['tabledrag_order']['handler']) ? $current['tabledrag_order']['handler'] : key($draggableviews_handlers),
+        '#default_value' => isset($current['tabledrag_order']['handler']) ? $current['tabledrag_order']['handler'] : key($draggableviews_handlers),
       ),
     );
 
@@ -205,12 +205,12 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       'field' => array(
         '#type' => 'select',
         '#options' => array('none' => t('none')) + _draggableviews_filter_fields(array('nodereference'), $handlers),
-        '#value' => isset($current['tabledrag_hierarchy']['field']) ? $current['tabledrag_hierarchy']['field'] : 'none',
+        '#default_value' => isset($current['tabledrag_hierarchy']['field']) ? $current['tabledrag_hierarchy']['field'] : 'none',
       ),
       'handler' => array(
         '#type' => 'select',
         '#options' => $draggableviews_handlers,
-        '#value' => isset($current['tabledrag_hierarchy']['handler']) ? $current['tabledrag_hierarchy']['handler'] : key($draggableviews_handlers),
+        '#default_value' => isset($current['tabledrag_hierarchy']['handler']) ? $current['tabledrag_hierarchy']['handler'] : key($draggableviews_handlers),
       ),
     );
 
@@ -243,17 +243,17 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         'node_type' => array(
           '#type' => 'select',
           '#options' => $node_types,
-          '#value' => isset($current['tabledrag_types'][$i]['node_type']) ? $current['tabledrag_types'][$i]['node_type'] : $node_types[0],
+          '#default_value' => isset($current['tabledrag_types'][$i]['node_type']) ? $current['tabledrag_types'][$i]['node_type'] : $node_types[0],
         ),
         'type' => array(
           '#type' => 'select',
           '#options' => array('root' => 'root', 'leaf' => 'leaf'),
-          '#value' => isset($current['tabledrag_types'][$i]['type']) ? $current['tabledrag_types'][$i]['type'] : 'root',
+          '#default_value' => isset($current['tabledrag_types'][$i]['type']) ? $current['tabledrag_types'][$i]['type'] : 'root',
         ),
         'tabledrag_type_del_button' => array(
           '#type' => 'button',
           '#name' => 'tabledrag_types_del_'. $index,
-          '#value' => t('Delete'),
+          '#default_value' => t('Delete'),
         ),
       );
       $index++;
