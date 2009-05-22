@@ -531,7 +531,8 @@ function _draggableviews_extend_view_window(&$info, $reload = FALSE) {
     // Slice out all nodes before (currently not shown):
     $nodes_before  = array_slice($nodes, 0, $first_index, TRUE);
     // Slice out all nodes after  (currently not shown):
-    $nodes_after   = array_slice($nodes, $last_index + 1, NULL, TRUE);
+    // array_slice: In PHP version < 5.0.2 the 3rd argument (length) must not be ommited (set to NULL). The value must be the exact amount of elements.
+    $nodes_after   = array_slice($nodes, $last_index + 1, strlen($nodes) + $last_index, TRUE);
     // Slice out all nodes that are currently shown:
     $nodes_current = array_slice($nodes, $first_index, $last_index - $first_index + 1, TRUE);
 
