@@ -294,7 +294,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['tabledrag_lock'] = array(
       '#type' => 'checkboxes',
       '#name' => 'tabledrag_lock',
-      '#options' => array('lock' => t('The use cannot rearrange nodes any more (locked)')),
+      '#options' => array('lock' => t('The user cannot rearrange nodes (locked)')),
       '#title' => t('Lock'),
       '#default_value' => isset($current['tabledrag_lock']) ? $current['tabledrag_lock'] : array(),
     );
