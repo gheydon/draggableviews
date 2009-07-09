@@ -132,7 +132,7 @@ function draggableviews_theme() {
   $views = views_get_all_views();
   foreach ($views AS $view) {
     foreach (array_keys($view->display) AS $display_id) {
-      $array['draggableviews_view_draggabletable_form_'. $view->vid .'_'. $display_id] = array(
+      $array['draggableviews_view_draggabletable_form_'. $view->name .'_'. $display_id] = array(
         'template' => 'draggableviews-view-draggabletable-form',
         'preprocess functions' => array(
           'template_preprocess_draggableviews_view_draggabletable_form',

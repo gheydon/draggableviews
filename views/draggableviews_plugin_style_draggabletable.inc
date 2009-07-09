@@ -331,11 +331,12 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     // Due to the fact that multiple views can be shown on the same page we need to use
     // an unique form_id for each view and display. Same displays of the same view can
     // share the same id because the concerned views object is the same.
-    $form_id = 'draggableviews_view_draggabletable_form_'. $this->view->vid;
+    $form_id = 'draggableviews_view_draggabletable_form_'. $this->view->name . '_' .$this->view->current_display;
+    /*
     if (is_numeric($this->view->vid)) {
       // If the view has already been saved attach the display id to the form id.
       $form_id .= '_'. $this->view->current_display;
-    }
+    }*/
     return drupal_get_form($form_id, $this);
   }
 }
