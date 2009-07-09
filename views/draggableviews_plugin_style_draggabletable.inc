@@ -114,6 +114,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     // + Set field to save the parent in
     // + Apply tabledrag-type to content-types (Root (can't have parent), Leaf (can't have children)).
     // + Set if expand/collapse links should be shown
+    // + Toggle tracking of order with respect to View arguments
 
     $input = array();
     $input = $form_state['input'];
@@ -305,6 +306,14 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#default_value' => isset($current['draggableviews_default_on_top']) ? $current['draggableviews_default_on_top'] : 1,
       '#description' => t('Nodes without a numerical order value assigned will be treated as new nodes. Decide where they should appear by default.'),
       '#options' => array(t('On Bottom'), t('On Top')),
+    );
+
+    $form['draggableviews_arguments'] = array(
+      '#type' => 'checkboxes',
+      '#name' => 'draggableviews_arguments',
+      '#options' => array('use_args' => t('Use arguments as well as view ID to order nodes.')),
+      '#description' => t('If checked, nodes can be reordered for any set of views arguments.  Use with care: If you have many combinations of arguments, your database could become very large.'),
+      '#default_value' => isset($current['draggableviews_arguments']) ? $current['draggableviews_arguments'] : array(),
     );
 
     // Let extension modules alter the output

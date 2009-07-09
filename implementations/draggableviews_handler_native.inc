@@ -28,8 +28,14 @@ class draggableviews_handler_native {
   }
 
   function save($nid, $value) {
-    db_query('DELETE FROM {draggableviews_structure} WHERE vid=%d AND nid=%d AND delta=%d', $this->view->vid, $nid, $this->delta);
-    db_query('INSERT INTO {draggableviews_structure}(vid, nid, delta, value) VALUES(%d, %d, %d, %d)', $this->view->vid, $nid, $this->delta, $value);
+    $args = NULL;
+
+    if (!empty($this->view->style_plugin->options['draggableviews_arguments']['use_args'])) {
+      $args = implode('/', $this->view->args);
+    }
+
+    db_query("DELETE FROM {draggableviews_structure} WHERE vid=%d AND nid=%d AND delta=%d AND args='%s'", $this->view->vid, $nid, $this->delta, $args);
+    db_query("INSERT INTO {draggableviews_structure}(vid, nid, delta, value, args) VALUES(%d, %d, %d, %d, '%s')", $this->view->vid, $nid, $this->delta, $value, $args);
   }
 
   function get_form_element($value, $attributes = array()) {

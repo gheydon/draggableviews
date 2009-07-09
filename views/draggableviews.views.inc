@@ -109,6 +109,17 @@ function draggableviews_views_query_alter(&$view, &$query) {
           'value' => is_numeric($view->vid) ? $view->vid : 0,
           'numeric' => TRUE,
       );
+      if (!empty($view->style_plugin->options['draggableviews_arguments']['use_args'])) {
+        $args = NULL;
+        if(!empty($view->args)) {
+          $args = implode('/', $view->args);
+        }
+        $query->table_queue['draggableviews_structure'. $i]['join']->extra[] = array(
+          'field' => 'args',
+          'operator' => '=',
+          'value' =>  $args, 
+        );
+      }
     }
   }
 }

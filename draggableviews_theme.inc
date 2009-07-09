@@ -427,6 +427,8 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
 
   $draggableviews_default_on_top = drupal_render($form['draggableviews_default_on_top']);
 
+  $draggableviews_arguments = drupal_render($form['draggableviews_arguments']);
+
   // Let extension modules append to the output
   $extensions = array();
   foreach (module_implements('draggableviews_style_plugin_render') as $module) {
@@ -468,6 +470,8 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   $output .= $tabledrag_lock;
   // Append default behaviour radios.
   $output .= $draggableviews_default_on_top;
+  // Append argument checkbox.
+  $output .= $draggableviews_arguments;
   // append extension modules output
   $output .= implode('', $extensions);
 
