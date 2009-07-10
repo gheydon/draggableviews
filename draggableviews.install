@@ -70,6 +70,8 @@ function draggableviews_schema() {
         'description' => t('Makes the order unique for a given set of arguments'),
         'type' => 'varchar',
         'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
       ),
       'value' => array(
         'description' => t('The value.'),
@@ -79,7 +81,7 @@ function draggableviews_schema() {
         'default' => 0,
       ),
     ),
-    'primary key' => array('vid', 'nid', 'delta', 'args'),
+    'primary key' => array('nid', 'vid', 'delta', 'args'),
   );
   return $schema;
 }
