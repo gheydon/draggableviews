@@ -329,12 +329,19 @@ function _draggableviews_rebuild_hierarchy(&$info) {
   _draggableviews_calculate_depths($info);
 
   // Detect and repair ordering errors.
-  // The nodes order values have to equal with the parents order values.
+  // The child node order values on the parent's level have to equal with the parent's order values. If they don't they will be set properly.
+  // In order to avoid ambiguous values we add unique float values ($safe_offset < 1) to all order values. This assures that
+  // child nodes always appear right after their parents even if there are other nodes with the same order value on the parents level.
+  $safe_offset = 0;
+  foreach ($info['nodes'] AS $nid => $values) {
+    $info['nodes'][$nid]['order'][$values['depth']] += $safe_offset;
+    $safe_offset += DRAGGABLEVIEWS_SAFE_OFFSET;
+  }
   _draggableviews_check_order($info);
 
   // The last issue we have to deal with is the order itself. Probably there
   // are more many with the same order value what could lead to display errors.
-  // We just sort the nodes by their current order values and subsequent we assign ascending numbers.
+  // We just sort the nodes by their current order values and then we subsequently assign ascending numbers.
   _draggableviews_sort_nodes($info['nodes']);
   _draggableviews_ascending_numbers($info, 0, TRUE);
 
@@ -460,7 +467,11 @@ function _draggableviews_ascending_numbers(&$info, $offset = 0, $renumber = FALS
 function _draggableviews_extend_view_window(&$info, $reload = FALSE) {
   // Check page settings.
   if ($info['pager']['items_per_page'] <= 0) {
-    // Nothing to do. Just return the actual range.
+    // Nothing to do. Just [reload the view and] return the actual range.
+    if ($reload) {
+      // Re-execute the view and reload the info array.
+      _draggableviews_reload_info($info);
+    }
     return array(
       'first_index' => 0,
       'last_index' => count($info['view']->result) - 1,
@@ -654,6 +665,8 @@ function _draggableviews_save_hierarchy($info) {
  * Calculate Depths
  *
  * Nodes with broken parents will be brought down to the root level.
+ * Order values will be moved to the actual level. Order values of the
+ * next unused level will be set to the minimum value.
  *
  * @param $info
  *   The structured information array. Look at _draggableviews_info(..) to learn more.
@@ -753,18 +766,6 @@ function _draggableviews_get_hierarchy_depth($nid, $nodes, $info) {
 function _draggableviews_check_order(&$info) {
   foreach ($info['nodes'] as $nid => $prop) {
     _draggableviews_check_node_order($nid, $info);
-
-    if ($prop['depth'] > 0) {
-      // Set the parent node order of the current level to 0 (B in the example). This should prevent
-      // broken structures caused by "bad nodes" (A in the example) with the same order at the parents level.
-      // B     (0 -1) The parent of C
-      // A     (0 -1) A bad node
-      // --C   (0  1) The child node of B
-      // We take advantage of this when we sort the nodes.
-      $parent = $prop['parent'];
-      $depth  = $prop['depth'];
-      $info['nodes'][$parent]['order'][$depth] = 0;
-    }
   }
 }
 

@@ -7,6 +7,10 @@
  * With this plugin rows become draggable and can be organized in complex structures.
  */
 
+// The safe offset guarantees that all order values are unique.
+// (This is essential to make sure that child nodes appear right after their parents)
+define('DRAGGABLEVIEWS_SAFE_OFFSET', 0.0001);
+
 require_once './'. drupal_get_path('module', 'draggableviews') ."/draggableviews.inc";
 require_once './'. drupal_get_path('module', 'draggableviews') ."/draggableviews_theme.inc";
 
@@ -185,7 +189,7 @@ function draggableviews_views_pre_execute(&$view) {
   $info['pager'] = $info['view']->pager;
 
   if ($info['pager']['items_per_page'] > 0) {
-    // Paging is beeing used. We modifiy some paging settings before the views gets executed.
+    // Paging is beeing used. We modify some paging settings before the view gets executed.
 
     // We let views think that the current page is 0, but we also backup the actual value. We
     // will restore it after finishing all operations (see hook_views_pre_render).
@@ -269,14 +273,14 @@ function draggableviews_views_pre_render(&$view) {
   else {
     // CASE B) Extend view and check structure.
 
-  	if ($info['hierarchy']) {
-  	  // Extend views window and reload view.
-  	  $range = _draggableviews_extend_view_window($info, TRUE);
-  	}
-  	else {
-      // Extend views window, but don't reload view.
+    if ($info['hierarchy']) {
+      // Extend views window in case of paging and reload view.
+      $range = _draggableviews_extend_view_window($info, TRUE);
+    }
+    else {
+      // Extend views window in case of paging, but don't reload view. (Only mark extension nodes)
       $range = _draggableviews_extend_view_window($info, FALSE);
-  	}
+    }
 
     if (!_draggableviews_quick_check_structure($info)) {
       // The structure is broken and has to be repaired. We restore the original page settings now because
