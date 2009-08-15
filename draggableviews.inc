@@ -159,14 +159,15 @@ function _draggableviews_info($view, $info = NULL) {
     // loop through all resulting nodes
     foreach ($results as $row) {
       if (is_numeric($row->{$info['order']['field']['field_alias']})) {
-        $info['nodes'][$row->nid]['order'][0] = (int)($row->{$info['order']['field']['field_alias']});
+        $info['nodes'][$row->{$view->base_field}]['order'][0] = (int)($row->{$info['order']['field']['field_alias']});
       }
       else {
-        // Default position of new nodes.
-        $info['nodes'][$row->nid]['order'][0] = $info['default_on_top'] == 1 ? -1 : $view->total_rows;
+        // Default position of new nodes. We cannot use $view->total_rows instead of 99999999 because
+        // $view->total_rows will not be calculated if paging is not used.
+        $info['nodes'][$row->{$view->base_field}]['order'][0] = $info['default_on_top'] == 1 ? -1 : 99999999;
       }
       if (isset($info['hierarchy'])) {
-        $info['nodes'][$row->nid]['parent'] = (int)($row->{$info['hierarchy']['field']['field_alias']});
+        $info['nodes'][$row->{$view->base_field}]['parent'] = (int)($row->{$info['hierarchy']['field']['field_alias']});
       }
     }
   }
@@ -177,13 +178,16 @@ function _draggableviews_info($view, $info = NULL) {
 /*
  * Quick Check Structure
  *
- * I used the word "Quick" because only visible nodes and only the very top hierarchy level will be checked. If the
- * return is TRUE we can be sure that the structure will be displayed correctly. But errors that don't affect the
- * current output can not be detected. Enhanced checks will be done when we have to rebuild a broken structure.
+ * I used the word "Quick" because only visible nodes will be checked. If the
+ * return is TRUE we can be sure that the structure will be displayed correctly.
+ * But errors that don't affect the current output can not be detected.
+ * Enhanced checks will be done when we have to rebuild a broken structure.
  *
  * We check for the following:
- *  - Wrong order values: The order values must constantly increase by 1, independent of the hierarchy level.
- *  - Parent mismatch: The parent_nid must equal with the nid we memorized before we entered the current hierarchy level.
+ *  - Wrong order values: The order values must constantly increase by 1,
+ *     independent of the hierarchy level.
+ *  - Parent mismatch: The parent_nid must equal with the nid we memorized
+ *     before we entered the current hierarchy level.
  *
  * @param $inputs
  *   The structured info array. Look at _draggableviews_info(..) to learn more.
@@ -294,7 +298,8 @@ function _draggableviews_build_hierarchy(&$info) {
     $nodes[$nid]['depth']             = $depth;
   }
 
-  // Last but not least sort nodes and finally assign ascending numbers. This is necessary since this module supports paging.
+  // Last but not least sort nodes and finally assign ascending numbers.
+  // This is necessary since this module supports paging.
   _draggableviews_sort_nodes($nodes);
   // calculate views page offset
   $pager  = $info['view']->pager;
@@ -329,9 +334,12 @@ function _draggableviews_rebuild_hierarchy(&$info) {
   _draggableviews_calculate_depths($info);
 
   // Detect and repair ordering errors.
-  // The child node order values on the parent's level have to equal with the parent's order values. If they don't they will be set properly.
-  // In order to avoid ambiguous values we add unique float values ($safe_offset < 1) to all order values. This assures that
-  // child nodes always appear right after their parents even if there are other nodes with the same order value on the parents level.
+  // The child node order values on the parent's level have to equal
+  // with the parent's order values. If they don't equal they will be set properly.
+  // In order to avoid ambiguous values we add unique float
+  // values ($safe_offset < 1) to all order values. This assures that
+  // child nodes always appear right after their parents even if there
+  // are other nodes with the same order value on the parents level.
   $safe_offset = 0;
   foreach ($info['nodes'] AS $nid => $values) {
     $info['nodes'][$nid]['order'][$values['depth']] += $safe_offset;
@@ -339,9 +347,9 @@ function _draggableviews_rebuild_hierarchy(&$info) {
   }
   _draggableviews_check_order($info);
 
-  // The last issue we have to deal with is the order itself. Probably there
-  // are more many with the same order value what could lead to display errors.
-  // We just sort the nodes by their current order values and then we subsequently assign ascending numbers.
+  // The last issue we have to deal with is the order itself.
+  // We just sort the nodes by their current order values and
+  // then we subsequently assign ascending numbers.
   _draggableviews_sort_nodes($info['nodes']);
   _draggableviews_ascending_numbers($info, 0, TRUE);
 

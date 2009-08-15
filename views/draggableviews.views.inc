@@ -60,40 +60,50 @@ function draggableviews_views_handlers() {
 function draggableviews_views_data() {
   $data = array();
 
-  for ($i = 0; $i < 2; $i++) {
-    $data['draggableviews_structure'. $i]['table'] = array(
-      'group' => t('Draggableviews'),
-      'join' => array(
-        'node' => array(
-          'table' => 'draggableviews_structure',
-          'left_field' => 'nid',
-          'field' => 'nid',
-          'extra' => array(
-            array(
-              'field' => 'delta',
-              'operator' => '=',
-              'value' => $i,
-              'numeric' => TRUE,
+  $base_tables = array(
+    'nid' => 'node',
+    'uid' => 'users',
+    'cid' => 'comments',
+    'vid' => 'node_revisions',
+    'tid' => 'term_data',
+  );
+
+  foreach ($base_tables AS $base_field => $base_table) {
+    for ($i = 0; $i < 2; $i++) {
+      $data['draggableviews_structure_'. $base_table . $i]['table'] = array(
+        'group' => t('Draggableviews'),
+        'join' => array(
+          $base_table => array(
+            'table' => 'draggableviews_structure',
+            'left_field' => $base_field,
+            'field' => 'nid',
+            'extra' => array(
+              array(
+                'field' => 'delta',
+                'operator' => '=',
+                'value' => $i,
+                'numeric' => TRUE,
+              ),
             ),
           ),
         ),
-      ),
-    );
-    $data['draggableviews_structure'. $i]['value'. $i] = array(
-      'real field' => 'value',
-      'title' => t($i == 0 ? 'Order' : 'Parent'),
-      'field' => array(
-        'handler' => 'views_handler_field_draggableviews_structure',
-        'help' => t('This value provided by draggableviews is unique for each view.'),
-        'click sortable' => $i == 0 ? TRUE : FALSE,
-        'draggableviews_delta' => $i,
-      ),
-    );
-    if ($i == 0) {
-      $data['draggableviews_structure'. $i]['value'. $i]['sort'] = array(
-        'handler' => 'views_handler_sort_draggableviews_structure',
-        'help' => t('Sort by value'),
       );
+      $data['draggableviews_structure_'. $base_table . $i]['value'. $i] = array(
+        'real field' => 'value',
+        'title' => t($i == 0 ? 'Order' : 'Parent'),
+        'field' => array(
+          'handler' => 'views_handler_field_draggableviews_structure',
+          'help' => t('This value provided by draggableviews is unique for each view.'),
+          'click sortable' => $i == 0 ? TRUE : FALSE,
+          'draggableviews_delta' => $i,
+        ),
+      );
+      if ($i == 0) {
+        $data['draggableviews_structure_'. $base_table . $i]['value'. $i]['sort'] = array(
+          'handler' => 'views_handler_sort_draggableviews_structure',
+          'help' => t('Sort by value'),
+        );
+      }
     }
   }
 
@@ -102,8 +112,8 @@ function draggableviews_views_data() {
 
 function draggableviews_views_query_alter(&$view, &$query) {
   for ($i = 0; $i < 2; $i++) {
-    if (isset($query->table_queue['draggableviews_structure'. $i])) {
-      $query->table_queue['draggableviews_structure'. $i]['join']->extra[] = array(
+    if (isset($query->table_queue['draggableviews_structure_'. $view->base_table . $i])) {
+      $query->table_queue['draggableviews_structure_'. $view->base_table . $i]['join']->extra[] = array(
         'field' => 'vid',
         'operator' => '=',
         'value' => is_numeric($view->vid) ? $view->vid : 0,
@@ -115,7 +125,7 @@ function draggableviews_views_query_alter(&$view, &$query) {
           $args = implode('/', $view->args);
         }
       }
-      $query->table_queue['draggableviews_structure'. $i]['join']->extra[] = array(
+      $query->table_queue['draggableviews_structure_'. $view->base_table . $i]['join']->extra[] = array(
         'field' => 'args',
         'operator' => '=',
         'value' =>  $args, 

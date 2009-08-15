@@ -120,17 +120,26 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
   // loop through all rows the view returned
   foreach ($vars['rows'] as $i => $row) {
 
-    $nid = $result[$i]->nid;
+    $nid = $result[$i]->{$view->base_field};
 
     // build indentation (as tabledrag requires)
     $indentation = theme('indentation', $info['nodes'][$nid]['depth']);
 
     // get node object
-    $node = node_load(array('nid' => $nid));
+    switch ($view->base_table) {
+      case 'users':
+        $node = user_load($nid);
+        break;
+      case 'node':
+        $node = node_load(array('nid' => $nid));
+        break;
+    }
 
-    if (isset($info['types'][$node->type])) {
-      // set node type specification, if available (e.g. tabledrag-root)
-      $vars['tabledrag_type'][$i] = 'tabledrag-'. $info['types'][$node->type];
+    if (strcmp($view->base_table, 'node') == 0) {
+      if (isset($info['types'][$node->type])) {
+        // set node type specification, if available (e.g. tabledrag-root)
+        $vars['tabledrag_type'][$i] = 'tabledrag-'. $info['types'][$node->type];
+      }
     }
 
     // Tabledrag needs all concerned fields to be input elements.
@@ -139,16 +148,11 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     // give them names.
     //
     // Concerned fields are
-    //  *) the first order field
-    //  *) the parent field (if hierarchy used)
-    //
-    // The remaining fields are not used by tabledrag. But - depending
-    // on the depth - one of them will simulate the first order field.
-    // (This behaviour is based on the fact that tabledrag handles each depth as it was the only one.)
+    //  *) the order field
+    //  *) the parent field (if hierarchy is used)
 
-    // this for loop should prevent copy->paste'ing code
-    for ($modus = 'hierarchy'; $modus !== FALSE ; $modus = ($modus == 'hierarchy' ? 'order' : FALSE)) {
-
+    // This for loop should prevent copy->paste'ing code.
+    foreach (array('hierarchy', 'order') AS $modus) {
       if (isset($info[$modus])) {
         if ($modus == 'hierarchy') {
           $value = $info['nodes'][$nid]['parent'];
@@ -158,7 +162,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
         }
         else {
           // get depth of current field
-          $depth = $info['nodes'][$node->nid]['depth'];
+          $depth = $info['nodes'][$nid]['depth'];
 
           $value = $info['nodes'][$nid]['order'][$depth];
 
@@ -166,15 +170,16 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
           $field = &$info['order']['field'];
         }
 
-        // get the form element
+        // Get the form element.
         $form_element = $field['handler']->get_form_element($value, array('field_name' => $field['field_name'] .'_'. $nid, 'class' => $field['field_name']));
 
-        // render new form element
+        // Render the new form element.
         $vars['rows'][$i][$field['field_name']] = drupal_render($form_element);
 
         if (!user_access('Allow Reordering') || $info['locked']) {
           // The tabledrag js would hide the input fields (depending on the settings). But the
-          // tabledrag js will not be added (permissions or locked), so we have to hide the input fields on our own.
+          // tabledrag js will not be added (either because of missing permissions or because
+          // the hierarchy is locked), so we have to hide the input fields on our own.
           if (!$info[$modus]['visible']) {
             $vars['style'][$field['field_name']] = 'display: none;';
           }

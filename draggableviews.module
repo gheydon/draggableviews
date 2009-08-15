@@ -11,8 +11,8 @@
 // (This is essential to make sure that child nodes appear right after their parents)
 define('DRAGGABLEVIEWS_SAFE_OFFSET', 0.0001);
 
-require_once './'. drupal_get_path('module', 'draggableviews') ."/draggableviews.inc";
-require_once './'. drupal_get_path('module', 'draggableviews') ."/draggableviews_theme.inc";
+require_once './'. drupal_get_path('module', 'draggableviews') .'/draggableviews.inc';
+require_once './'. drupal_get_path('module', 'draggableviews') .'/draggableviews_theme.inc';
 
 /**
  * Display help and module information
@@ -351,11 +351,11 @@ function draggableviews_view_draggabletable_form_submit($vars) {
     if (isset($info['order']['field'])) {
       // The input array must have the same structure as the node array.
       // E.g. because of _draggableviews_get_hierarchy_depth(..).
-      $info['input'][$row->nid]['order'][0] = $input[$info['order']['field']['field_name'] .'_'. $row->nid];
+      $info['input'][$row->{$view->base_field}]['order'][0] = $input[$info['order']['field']['field_name'] .'_'. $row->{$view->base_field}];
     }
     // Set parent values.
     if (isset($info['hierarchy'])) {
-      $info['input'][$row->nid]['parent'] = $input[$info['hierarchy']['field']['field_name'] .'_'. $row->nid];
+      $info['input'][$row->{$view->base_field}]['parent'] = $input[$info['hierarchy']['field']['field_name'] .'_'. $row->{$view->base_field}];
     }
   }
 
