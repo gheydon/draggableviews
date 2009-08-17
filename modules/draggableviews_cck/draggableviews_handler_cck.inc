@@ -29,25 +29,24 @@ class draggableviews_handler_cck {
   }
 
   function save($nid, $value) {
-
     $node = node_load(array('nid' => $nid));
-    // get field
-    if (isset($node->{$this->real_field_name})) {
+    $type = content_types($node->type);
+
+    // Get field.
+    if (isset($type['fields'][$this->real_field_name])) {
       $field = &$node->{$this->real_field_name};
     }
     else {
-      // return if field does not exist
+      // This note doesn't this field.
       return;
     }
 
     if (!isset($value)) {
-      // sometimes there is no value available (e.g. a root without a parent)
-
-      // set empty array
+      // Sometimes there is no value available (e.g. a root node without a parent).
       $value = 0;
     }
 
-    //differ between certain field types
+    // Differ between certain field types.
     switch ($this->field_type) {
       case 'nodereference':
         $field[0]['nid'] = $value;
@@ -62,10 +61,10 @@ class draggableviews_handler_cck {
     // If we didn't set $node->date then node_submit() would set it to the current timestamp.
     $node->date = format_date($node->created, 'custom', 'Y-m-d H:i:s O');
 
-    // finally save the node
-    if ($node = node_submit($node)) {
-      node_save($node);
-    }
+    // Submit node: Set teaser, format, author and date.
+    node_submit($node);
+    // Finally save the node.
+    node_save($node);
   }
 
   function get_form_element($value, $attributes = array()) {
@@ -99,9 +98,5 @@ class draggableviews_handler_cck {
   function set_range($start, $end) {
     $this->range_start = $start;
     $this->range_end   = $end;
-  }
-
-  function get_minimum_value() {
-    return -1;
   }
 }
