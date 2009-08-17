@@ -29,7 +29,9 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
 
     if (!isset($this->options['tabledrag_order'])) return $errors;
 
-    $fields = $this->view->get_items('field', $this->display->id);
+    $fields   = $this->view->get_items('field', $this->display->id);
+    $sorts    = $this->view->get_items('sort', $this->display->id);
+    $handlers = $this->display->handler->get_handlers('field');
 
     // Check if all configured fields are available.
     if (isset($this->options['tabledrag_order'])) {
@@ -45,8 +47,9 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       }
     }
 
-    // Check if first field is draggableviews handled and will be hidden.
+    // Check if first field is draggableviews handled and hidden.
     $found = FALSE;
+    // Get the first configured field.
     $first_field = key($fields);
     if (isset($this->options['tabledrag_order'])) {
       if ($this->options['tabledrag_order']['field'] == $first_field && $this->options['tabledrag_order_visible']['visible'] !== 'visible') {
@@ -67,12 +70,11 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
 
     // Check sort criteria.
     if (isset($this->options['tabledrag_order']['field']) && $this->options['tabledrag_order']['field'] != 'none') {
-      $field_alias = $this->options['tabledrag_order']['field'];
-      $sorts = $this->view->get_items('sort', $this->display->id);
+      $order_field = $fields[$this->options['tabledrag_order']['field']];
+      // Get the first sort criteria.
       $sort = current($sorts);
-      if (strcmp($fields[$field_alias]['field'], $sort['field']) != 0 || $sort['order'] == 'DESC') {
-        $tabledrag_order_field = $fields[$field_alias]['label'];
-        $errors[] = t('Display "@display": Draggableviews: You must sort by <i>@fields ascending</i> to display the structure correctly.', array('@display' => $this->display->display_title, '@fields' => $tabledrag_order_field));
+      if (strcmp($order_field['table'] . $order_field['field'], $sort['table'] . $sort['field']) != 0 || $sort['order'] == 'DESC') {
+        $errors[] = t('Display "@display": Draggableviews: You must sort by <i>@group: @title</i> ascending as the first sort criteria to display the structure correctly.', array('@display' => $this->display->display_title, '@group' => $handlers[$this->options['tabledrag_order']['field']]->definition['group'], '@title' => $handlers[$this->options['tabledrag_order']['field']]->definition['title']));
       }
     }
 
@@ -116,12 +118,15 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     // + Set if expand/collapse links should be shown
     // + Toggle tracking of order with respect to View arguments
 
+    // Tell the theme which base_table is beeing used.
+    $form['#base_table'] = $this->view->base_table;
+
     $input = array();
     $input = $form_state['input'];
 
     // Get all system-wide node types as a keyed array.
     foreach (node_get_types('types') AS $node_type) {
-      $node_types[$node_type->type] = $node_type->type;
+      $node_types[$node_type->type] = t($node_type->name);
     }
 
     $form['tabledrag_hierarchy']       = array();
@@ -232,33 +237,36 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#default_value' => (isset($current['draggableviews_depth_limit']) && is_numeric($current['draggableviews_depth_limit'])) ? $current['draggableviews_depth_limit'] : -1,
     );
 
-    // Tabledrag types (root/leafe).
-    // These fields will save the behaviour of a node-type (root, leaf).
-    $extra_row = isset($input['tabledrag_types_add']) ? TRUE : FALSE;
-    for ($i = 0, $index = 0; $i < count($current['tabledrag_types']) + ($extra_row == TRUE ? 1 : 0); $i++) {
+    if (strcmp($this->view->base_table, 'node') == 0) {
+      // Tabledrag types (root/leaf).
+      // These fields will save the behaviour of a node-type (root, leaf).
+      $extra_row = isset($input['tabledrag_types_add']) ? TRUE : FALSE;
+      for ($i = 0, $index = 0; $i < count($current['tabledrag_types']) + ($extra_row == TRUE ? 1 : 0); $i++) {
 
-      // if option should be deleted, continue loop
-      if (isset($input['tabledrag_types_del_'. $i])) continue;
+        // if option should be deleted, continue loop
+        if (isset($input['tabledrag_types_del_'. $i])) continue;
 
-      $form['tabledrag_types'][$index] = array(
-        'node_type' => array(
-          '#type' => 'select',
-          '#options' => $node_types,
-          '#default_value' => isset($current['tabledrag_types'][$i]['node_type']) ? $current['tabledrag_types'][$i]['node_type'] : $node_types[0],
-        ),
-        'type' => array(
-          '#type' => 'select',
-          '#options' => array('root' => 'root', 'leaf' => 'leaf'),
-          '#default_value' => isset($current['tabledrag_types'][$i]['type']) ? $current['tabledrag_types'][$i]['type'] : 'root',
-        ),
-        'tabledrag_type_del_button' => array(
-          '#type' => 'button',
-          '#name' => 'tabledrag_types_del_'. $index,
-          '#default_value' => t('Delete'),
-        ),
-      );
-      $index++;
+        $form['tabledrag_types'][$index] = array(
+          'node_type' => array(
+            '#type' => 'select',
+            '#options' => $node_types,
+            '#default_value' => isset($current['tabledrag_types'][$i]['node_type']) ? $current['tabledrag_types'][$i]['node_type'] : $node_types[0],
+          ),
+          'type' => array(
+            '#type' => 'select',
+            '#options' => array('root' => 'root', 'leaf' => 'leaf'),
+            '#default_value' => isset($current['tabledrag_types'][$i]['type']) ? $current['tabledrag_types'][$i]['type'] : 'root',
+          ),
+          'tabledrag_type_del_button' => array(
+            '#type' => 'button',
+            '#name' => 'tabledrag_types_del_'. $index,
+            '#default_value' => t('Delete'),
+          ),
+        );
+        $index++;
+      }
     }
+
     $form['tabledrag_types_add'] = array(
       '#type' => 'button',
       '#name' => 'tabledrag_types_add',
@@ -328,15 +336,18 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
    */
   function render() {
     // We need to wrap around a form to make it possible to submit changes.
-    // Due to the fact that multiple views can be shown on the same page we need to use
-    // an unique form_id for each view and display. Same displays of the same view can
-    // share the same id because the concerned views object is the same.
-    $form_id = 'draggableviews_view_draggabletable_form_'. $this->view->name . '_' .$this->view->current_display;
-    /*
+    // Due to the fact that multiple views (and thus also forms) can be shown on
+    // the same page we need to use an unique form_id for each display.
+    // Same displays of the same view can share the same id because the
+    // concerned views object is the same.
+
     if (is_numeric($this->view->vid)) {
-      // If the view has already been saved attach the display id to the form id.
-      $form_id .= '_'. $this->view->current_display;
-    }*/
+      // If the view has already been saved use the name and the display id to build the form id.
+      $form_id = 'draggableviews_view_draggabletable_form_'. $this->view->name . '_' .$this->view->current_display;
+    }
+    else {
+      $form_id = 'draggableviews_view_draggabletable_form_new';
+    }
     return drupal_get_form($form_id, $this);
   }
 }

@@ -906,3 +906,26 @@ function _draggableviews_compare_nodes($node1, $node2) {
   return 0;
 }
 
+/*
+ * Filter handlers by type.
+ *
+ * @param $type
+ *   the field type
+ * @param $fields
+ *   the fields array
+ * return
+ *   the available fields
+ */
+function _draggableviews_filter_fields($types = array(''), $handlers) {
+  $available_fields = array();
+
+  foreach ($handlers as $field => $handler) {
+    if ($label = $handler->label()) {
+      $available_fields[$field] = $label;
+    }
+    else {
+      $available_fields[$field] = $handler->ui_name();
+    }
+  }
+  return $available_fields;
+}

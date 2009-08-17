@@ -217,9 +217,9 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
 
   if (user_access('Allow Reordering') && !$info['locked']) {
     // Prepare tabledrag settings for output.
-    $vars['tabledrag'] = array();
+    $tabledrag = array();
     if (isset($info['order'])) {
-      $vars['tabledrag'][] = array(
+      $tabledrag[] = array(
         'action'       => 'order',
         'relationship' => 'sibling',
         'source'       => $info['order']['field']['field_name'],
@@ -230,7 +230,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
       );
     }
     if (isset($info['hierarchy'])) {
-      $vars['tabledrag'][] = array(
+      $tabledrag[] = array(
         'action'       => 'match',
         'relationship' => 'parent',
         'source'       => 'hidden_nid',
@@ -239,6 +239,11 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
         'hidden'       => !$info['hierarchy']['visible'],
         'limit'        => $info['depth_limit'],
       );
+    }
+
+    // Add tabledrag behavior.
+    foreach ($tabledrag as $drag) {
+      drupal_add_tabledrag($vars['tabledrag_table_id'], $drag['action'], $drag['relationship'], $drag['group'], $drag['subgroup'], $drag['source'], $drag['hidden'], $drag['limit']);
     }
   }
 
@@ -293,46 +298,22 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
 }
 
 function template_preprocess_draggableviews_view_draggabletable_form($vars) {
-  global $user;
+  // Get style plugin.
+  $style_plugin = $vars['form']['#parameters'][2];
+  // Get structured info array.
+  $info = $style_plugin->view->draggableviews_info;
 
-  // get view object
-  $view_obj = $vars['form']['#parameters'][2];
-  // get structured info array
-  $info     = $view_obj->view->draggableviews_info;
+  $vars['view'] = theme($style_plugin->theme_functions(), $style_plugin->view, $style_plugin->options, $style_plugin->view->result, '');
 
-  if ($view_obj->uses_row_plugin() && empty($view_obj->row_plugin)) {
-      vpr('views_plugin_style_default: Missing row plugin');
+  // Don't render the submit form..
+  // - if view hasn't been saved yet or
+  // - if user has no access or
+  // - if structure is locked.
+  if (is_numeric($style_plugin->view->vid) && user_access('Allow Reordering') && !$info['locked']) {
+    $vars['form'] =  drupal_render($vars['form']);
   }
   else {
-    // Group the rows according to the grouping field, if specified.
-    $sets = $view_obj->render_grouping($view_obj->view->result, $view_obj->options['grouping']);
-
-    // Render each group separately and concatenate.  Plugins may override this
-    // method if they wish some other way of handling grouping.
-    $output = '';
-    foreach ($sets as $title => $records) {
-/*      if ($view_obj->uses_row_plugin()) {
-        $rows = array();
-        foreach ($records as $label => $row) {
-          $rows[] = $view_obj->row_plugin->render($row);
-        }
-      }
-      else {
-        $rows = $records;
-      }*/
-
-      $output .= theme($view_obj->theme_functions(), $view_obj->view, $view_obj->options, $records, $title);
-    }
-  }
-  $vars['view'] = $output;
-
-  // Render submit form.
-  // Don't render if user has no access or view hasn't been saved yet or structure is locked.
-  if (is_numeric($view_obj->view->vid) && user_access('Allow Reordering') && !$info['locked']) {
-    $vars['submit_form'] =  drupal_render($vars['form']);
-  }
-  else {
-    $vars['submit_form'] = '';
+    $vars['form'] = '';
   }
 }
 
@@ -460,10 +441,12 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   $output .= $tabledrag_hierarchy_visible;
   // Append depth limit textfield to output.
   $output .= $draggableviews_depth_limit;
-  // Append tabledrag types settings.
-  $output .= $description_types;
-  $output .= theme('table', array(t('Node type'), t('Type'), '&nbsp;'), $tabledrag_types_rows);
-  $output .= $tabledrag_types_add;
+  if (strcmp($form['#base_table'], 'node') == 0) {
+    // Append tabledrag types settings.
+    $output .= $description_types;
+    $output .= theme('table', array(t('Node type'), t('Type'), '&nbsp;'), $tabledrag_types_rows);
+    $output .= $tabledrag_types_add;
+  }
   // Append expand yes/no checkbox to output.
   $output .= $tabledrag_expand;
   $output .= $tabledrag_expand_default;
@@ -482,28 +465,4 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
 
   // return output
   return $output;
-}
-
-/*
- * filter handlers by type
- *
- * @param $type
- *   the field type
- * @param $fields
- *   the fields array
- * return
- *   the available fields
- */
-function _draggableviews_filter_fields($types = array(''), $handlers) {
-  $available_fields = array();
-
-  foreach ($handlers as $field => $handler) {
-    if ($label = $handler->label()) {
-      $available_fields[$field] = $label;
-    }
-    else {
-      $available_fields[$field] = $handler->ui_name();
-    }
-  }
-  return $available_fields;
 }

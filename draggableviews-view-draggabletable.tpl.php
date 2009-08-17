@@ -10,17 +10,8 @@
  * - $rows: An array of row items. Each row is an array of content
  *   keyed by field ID.
  * 
- * - $tabledrag: An array of tabledrag settings
  * - $tabledrag_tableId: The table id that drupal_add_tabledrag needs
- * @ingroup views_templates
  */
-
-  //add tabledrag
-  if (count($tabledrag) > 0) {
-    foreach ($tabledrag as $drag) {
-      drupal_add_tabledrag($tabledrag_table_id, $drag['action'], $drag['relationship'], $drag['group'], $drag['subgroup'], $drag['source'], $drag['hidden'], $drag['limit']);
-    }
-  }
 ?>
 <table class="<?php print $class; ?>" id="<?php print $tabledrag_table_id; ?>">
   <thead>
