@@ -245,9 +245,12 @@ function draggableviews_views_pre_execute(&$view) {
  */
 function draggableviews_views_pre_render(&$view) {
   if (!isset($view->draggableviews_info)) {
-    // No info array has been appended. Nothing to do.
+    // This view doesn't use draggable_table style plugin. Nothing to do.
     return;
   }
+
+  // Make sure the theme we need is loaded.
+  _draggableviews_ensure_theme('draggableviews_view_draggabletable_form_'. $view->name .'_'. $view->style_plugin->display->id);
 
   // Initialize info array with the results of the executed view object.
   $view->draggableviews_info = _draggableviews_info($view, $view->draggableviews_info);
@@ -313,6 +316,22 @@ function draggableviews_views_pre_render(&$view) {
 
   // Finally we set the selectable options of the order field.
   $info['order']['field']['handler']->set_range($range['first_index'], $range['last_index']);
+}
+
+/**
+ * Ensure that the theme $theme_name is loaded in the registry.
+ * @param $theme_name
+ */
+function _draggableviews_ensure_theme($theme_name) {
+  init_theme();
+  $theme_registry = theme_get_registry();
+  if (!isset($theme_registry[$theme_name])) {
+    // The theme we need is not registered.
+    // We clear the theme_registry cache and cause the theme registry to be rebuilt.
+    drupal_rebuild_theme_registry();
+    unset($GLOBALS['theme']);
+    init_theme();
+  }
 }
 
 /**
