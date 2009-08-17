@@ -294,7 +294,7 @@ function _draggableviews_build_hierarchy(&$info) {
 
     $depth = ($depth == -1) ? 0 : $depth;
 
-    $nodes[$nid]['order'][$depth + 1] = $info['order']['field']['handler']->get_minimum_value();
+    $nodes[$nid]['order'][$depth + 1] = DRAGGABLEVIEWS_MIN_VALUE;
     $nodes[$nid]['depth']             = $depth;
   }
 
@@ -705,7 +705,7 @@ function _draggableviews_calculate_depths(&$info) {
 
     // Set the next level to the minimum value. Otherwise
     // it could happen that a child appears above its parent.
-    $info['nodes'][$nid]['order'][$depth + 1] = $info['order']['field']['handler']->get_minimum_value();
+    $info['nodes'][$nid]['order'][$depth + 1] = DRAGGABLEVIEWS_MIN_VALUE;
 
     if ($depth > $info['depth']) $info['depth'] = $depth;
   }

@@ -187,7 +187,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#weight' => 9,
       'field' => array(
         '#type' => 'select',
-        '#options' => array('none' => t('none')) + _draggableviews_filter_fields(array('order'), $handlers),
+        '#options' => array('none' => '- '. t('none'). ' -') + _draggableviews_filter_fields(array('order'), $handlers),
         '#default_value' => isset($current['tabledrag_order']['field']) ? $current['tabledrag_order']['field'] : 'none',
       ),
       'handler' => array(
@@ -210,7 +210,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#weight' => 10,
       'field' => array(
         '#type' => 'select',
-        '#options' => array('none' => t('none')) + _draggableviews_filter_fields(array('nodereference'), $handlers),
+        '#options' => array('none' => '- '. t('none') .' -') + _draggableviews_filter_fields(array('nodereference'), $handlers),
         '#default_value' => isset($current['tabledrag_hierarchy']['field']) ? $current['tabledrag_hierarchy']['field'] : 'none',
       ),
       'handler' => array(

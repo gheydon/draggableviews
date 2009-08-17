@@ -69,8 +69,4 @@ class draggableviews_handler_native {
     $this->range_start = $start;
     $this->range_end   = $end;
   }
-
-  function get_minimum_value() {
-    return -1;
-  }
 }
