@@ -5,8 +5,9 @@ Drupal.behaviors.draggableviewsLoad = function() {
     if (!Drupal.settings.draggableviews[table_id]) return;
 
     $(this).find("tr.draggable").each( function(i) {
+      $(this).find('.draggableviews-collapse,.draggableviews-expand').remove();
       var nid = $(this).find('td > .hidden_nid').attr('value');
-      // append icon only if we find at least one child
+      // Append icon only if we find at least one child.
       if ($("#" + table_id + " tr:has(td > ." + Drupal.settings.draggableviews[table_id].parent + "[value=" + nid + "])").size() > 0) {
         $(this).find('td:first').each( function(i) {
           $(this).append('<div class="draggableviews-expand" href="#"></div>').children('.draggableviews-expand').bind('click', function(){draggableviews_collapse(nid, table_id);});
@@ -134,6 +135,8 @@ function draggableviews_set_state_field(parent_id, table_id, state) {
       $(this).append('<input type="hidden" name="' + field_name + '" value="' + (state ? '1' : '0') + '" />');
     }
   });
+
+  Drupal.settings.draggableviews[table_id].states[parent_id] = state;
 }
 
 // Get state of expanded/collapsed field.
