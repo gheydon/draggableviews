@@ -477,7 +477,7 @@ function draggableviews_draggableviews_handlers() {
     'native' => array(
       'file' => 'implementations/draggableviews_handler_native.inc',
       'title' => t('Native'),
-      'description' => 'Storage of structure done by draggableviews',
+      'description' => 'Storage of structure done by DraggableViews.',
       'handler' => 'draggableviews_handler_native',
     ),
   );

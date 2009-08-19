@@ -1,6 +1,6 @@
 ; $Id$
-name = DraggableViews CCK Implementation
-description = Provides CCK-support for order fields
+name = DraggableViews CCK handler
+description = Provides CCK support for both order fields and parent fields.
 dependencies[] = draggableviews
 dependencies[] = content
 package = Views
