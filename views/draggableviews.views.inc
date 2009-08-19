@@ -72,7 +72,7 @@ function draggableviews_views_data() {
   foreach ($base_tables AS $base_field => $base_table) {
     for ($i = 0; $i < 2; $i++) {
       $data['draggableviews_structure_'. $base_table . $i]['table'] = array(
-        'group' => t('Draggableviews'),
+        'group' => t('DraggableViews'),
         'join' => array(
           $base_table => array(
             'table' => 'draggableviews_structure',
@@ -122,7 +122,7 @@ function draggableviews_views_query_alter(&$view, &$query) {
       );
       $args = NULL;
       if (!empty($view->style_plugin->options['draggableviews_arguments']['use_args'])) {
-        if(!empty($view->args)) {
+        if (!empty($view->args)) {
           $args = implode('/', $view->args);
         }
       }

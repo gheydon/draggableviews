@@ -543,7 +543,7 @@ function _draggableviews_extend_view_window(&$info, $reload = FALSE) {
   if (isset($info['hierarchy'])) {
     // There are possibly some child nodes that would be cut of their parents. To avoid this we localize
     // the next parents (if needed) and use their index for the range. To analyze the nodes array we slice out
-    // all nodes before (the B's) and all nodes after (the a's) the current page (the -'s):
+    // all nodes before (the B's) and all nodes after (the A's) the current page (the -'s):
     //
     // B B B B B B B B B - - - - - - - - A A A A A A A A A A.
     //
@@ -551,7 +551,7 @@ function _draggableviews_extend_view_window(&$info, $reload = FALSE) {
     $nodes_before  = array_slice($nodes, 0, $first_index, TRUE);
     // Slice out all nodes after  (currently not shown):
     // array_slice: In PHP version < 5.0.2 the 3rd argument (length) must not be ommited (set to NULL). The value must be the exact amount of elements.
-    $nodes_after   = array_slice($nodes, $last_index + 1, strlen($nodes) + $last_index, TRUE);
+    $nodes_after   = array_slice($nodes, $last_index + 1, count($nodes) - ($last_index + 1), TRUE);
     // Slice out all nodes that are currently shown:
     $nodes_current = array_slice($nodes, $first_index, $last_index - $first_index + 1, TRUE);
 

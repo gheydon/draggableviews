@@ -9,7 +9,7 @@
  * - $class: A class or classes to apply to the table, based on settings.
  * - $rows: An array of row items. Each row is an array of content
  *   keyed by field ID.
- * 
+ *
  * - $tabledrag_tableId: The table id that drupal_add_tabledrag needs
  */
 ?>
@@ -26,7 +26,7 @@
   <tbody>
     <?php foreach ($rows as $count => $row): ?>
       <?php $zebra = ($count % 2 == 1) ? 'even' : 'odd'; ?>
-      <tr class="draggable <?php print $zebra; ?><?php if ($draggableviews_extended[$count]) print ' '. 'draggableviews-extended'; ?><?php if ($tabledrag_type[$count]) print ' '. $tabledrag_type[$count]; ?>">
+      <tr class="draggable <?php print $zebra; ?><?php if ($draggableviews_extended[$count]) print ' draggableviews-extended'; ?><?php if ($tabledrag_type[$count]) print ' '. $tabledrag_type[$count]; ?>">
         <?php foreach ($row as $field => $content): ?>
           <td class="views-field views-field-<?php print $fields[$field]; ?>"<?php if ($style[$field]) print ' style="'. $style[$field] .'"'; ?>><?php
             print $content;

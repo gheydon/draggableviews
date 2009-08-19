@@ -27,7 +27,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
 
   $query    = tablesort_get_querystring();
   if ($query) {
-    $query = '&' . $query;
+    $query = '&'. $query;
   }
 
   // Fields must be rendered in order as of Views 2.3, so we will pre-render
@@ -60,9 +60,9 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
           $label .= theme('tablesort_indicator', $initial);
         }
         $link_options = array(
-          'html' => true,
+          'html' => TRUE,
           'attributes' => array('title' => $title),
-          'query' => 'order=' . urlencode($field) . '&sort=' . $initial . $query,
+          'query' => 'order='. urlencode($field) .'&sort='. $initial . $query,
         );
         $vars['header'][$field] = l($label, $_GET['q'], $link_options);
       }
@@ -274,9 +274,9 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
         // let js know whether child nodes should be expanded or not
         drupal_add_js(array(
                         'draggableviews' => array(
-                           $vars['tabledrag_table_id'] => array(
-                            'expand_default' =>  $options['tabledrag_expand']['collapsed'] ? 1 : 0,
-                           ),
+                          $vars['tabledrag_table_id'] => array(
+                            'expand_default' => $options['tabledrag_expand']['collapsed'] ? 1 : 0,
+                          ),
                         ),
                       ),
                       'setting');

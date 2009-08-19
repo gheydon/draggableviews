@@ -187,7 +187,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#weight' => 9,
       'field' => array(
         '#type' => 'select',
-        '#options' => array('none' => '- '. t('none'). ' -') + _draggableviews_filter_fields(array('order'), $handlers),
+        '#options' => array('none' => '- '. t('none') .' -') + _draggableviews_filter_fields(array('order'), $handlers),
         '#default_value' => isset($current['tabledrag_order']['field']) ? $current['tabledrag_order']['field'] : 'none',
       ),
       'handler' => array(
@@ -343,7 +343,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
 
     if (is_numeric($this->view->vid)) {
       // If the view has already been saved use the name and the display id to build the form id.
-      $form_id = 'draggableviews_view_draggabletable_form_'. $this->view->name . '_' .$this->view->current_display;
+      $form_id = 'draggableviews_view_draggabletable_form_'. $this->view->name .'_'. $this->view->current_display;
     }
     else {
       $form_id = 'draggableviews_view_draggabletable_form_new';

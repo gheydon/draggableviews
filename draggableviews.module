@@ -282,7 +282,7 @@ function draggableviews_views_pre_render(&$view) {
     // CASE B) Extend view and check structure.
 
     if ($info['hierarchy']) {
-      // Extend views window in case of paging and reload view.
+      // Shrink views window in case of paging and reload view.
       $range = _draggableviews_extend_view_window($info, TRUE);
     }
     else {
@@ -299,7 +299,7 @@ function draggableviews_views_pre_render(&$view) {
       // Try to extend the visible window with the suggested values. The calculated range will be returned.
       $range = _draggableviews_extend_view_window($info, TRUE);
 
-      if (strlen(variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.')) > 0) {
+      if (drupal_strlen(variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.')) > 0) {
         drupal_set_message(variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.'));
       }
     }
@@ -491,7 +491,7 @@ function draggableviews_perm() {
 }
 
 /**
- * Impleneting hook_views_api
+ * Implementing hook_views_api
  */
 function draggableviews_views_api() {
   return array(

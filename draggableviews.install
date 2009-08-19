@@ -66,7 +66,7 @@ function draggableviews_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
-      'args' => array (
+      'args' => array(
         'description' => t('Makes the order unique for a given set of arguments'),
         'type' => 'varchar',
         'length' => 255,
@@ -122,12 +122,12 @@ function draggableviews_update_6301() {
 }
 
 /**
- * Alter schema to add arguments field 
+ * Alter schema to add arguments field
  */
 function draggableviews_update_6400() {
   $ret = array();
   $ret[] = update_sql('ALTER TABLE {draggableviews_structure} DROP PRIMARY KEY');
-  db_add_field($ret, 'draggableviews_structure', 'args', array('type' => 'varchar', 'length' => 255,));
+  db_add_field($ret, 'draggableviews_structure', 'args', array('type' => 'varchar', 'length' => 255));
   db_add_primary_key($ret, 'draggableviews_structure', array('nid', 'vid', 'delta', 'args'));
   return $ret;
 }
