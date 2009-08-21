@@ -115,10 +115,9 @@ function draggableviews_views_query_alter(&$view, &$query) {
   for ($i = 0; $i < 2; $i++) {
     if (isset($query->table_queue['draggableviews_structure_'. $view->base_table . $i])) {
       $query->table_queue['draggableviews_structure_'. $view->base_table . $i]['join']->extra[] = array(
-        'field' => 'vid',
+        'field' => 'view_name',
         'operator' => '=',
-        'value' => is_numeric($view->vid) ? $view->vid : 0,
-        'numeric' => TRUE,
+        'value' => $view->name,
       );
       $args = NULL;
       if (!empty($view->style_plugin->options['draggableviews_arguments']['use_args'])) {

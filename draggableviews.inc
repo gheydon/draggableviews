@@ -89,7 +89,7 @@ function _draggableviews_info($view, $info = NULL) {
     $info = array();
 
     // extract draggableviews settings.
-    if ($options['tabledrag_order']['field'] != 'none') {
+    if ($options['tabledrag_order']['field'] && strcmp($options['tabledrag_order']['field'], 'none') != 0) {
       if ($handler = _draggableviews_init_handler($options['tabledrag_order'], $view)) {
         $info['order'] = array(
           'field' => array(
@@ -107,7 +107,7 @@ function _draggableviews_info($view, $info = NULL) {
       }
       $info['order']['visible'] = strcmp($options['tabledrag_order_visible']['visible'], 'visible') == 0 ? TRUE : FALSE;
 
-      if ($options['tabledrag_hierarchy']['field'] != 'none') {
+      if ($options['tabledrag_hierarchy']['field'] && strcmp($options['tabledrag_hierarchy']['field'], 'none') != 0) {
         if ($handler = _draggableviews_init_handler($options['tabledrag_hierarchy'], $view)) {
           $info['hierarchy'] = array(
             'field' => array(

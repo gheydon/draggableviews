@@ -27,11 +27,12 @@ function draggableviews_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
-      'vid' => array(
+      'view_name' => array(
         'description' => t('The view id.'),
-        'type' => 'int',
-        'unsigned' => TRUE,
+        'type' => 'varchar',
+        'length' => 32,
         'not null' => TRUE,
+        'default' => '',
       ),
       'collapsed' => array(
         'description' => t('The state.'),
@@ -41,18 +42,18 @@ function draggableviews_schema() {
         'default' => 0,
       ),
     ),
-    'primary key' => array('uid', 'parent_nid', 'vid'),
+    'primary key' => array('uid', 'parent_nid', 'view_name'),
   );
 
   $schema['draggableviews_structure'] = array(
     'description' => t('The table saves the order settings of an draggableview.'),
     'fields' => array(
-      'vid' => array(
+      'view_name' => array(
         'description' => t('Makes the order unique for each view.'),
-        'type' => 'int',
-        'unsigned' => TRUE,
+        'type' => 'varchar',
+        'length' => 32,
         'not null' => TRUE,
-        'default' => 0,
+        'default' => '',
       ),
       'nid' => array(
         'description' => t('The node id.'),
@@ -81,7 +82,7 @@ function draggableviews_schema() {
         'default' => 0,
       ),
     ),
-    'primary key' => array('nid', 'vid', 'delta', 'args'),
+    'primary key' => array('nid', 'view_name', 'delta', 'args'),
   );
   return $schema;
 }
@@ -132,3 +133,32 @@ function draggableviews_update_6400() {
   return $ret;
 }
 
+/**
+ * Alter schema to add arguments field
+ */
+function draggableviews_update_6401() {
+  $ret = array();
+  db_drop_primary_key($ret, 'draggableviews_structure');
+  db_add_field($ret, 'draggableviews_structure', 'view_name', array('type' => 'varchar', 'length' => 32, 'not null' => TRUE, 'default' => ''));
+  // Update code.
+  $result = db_query('SELECT vid FROM {draggableviews_structure}');
+  while($row = db_fetch_object($result)) {
+    $view = db_fetch_object(db_query('SELECT name FROM {views_view} WHERE vid=%d', $row->vid));
+    db_query("UPDATE {draggableviews_structure} SET view_name='%s' WHERE vid=%d", $view->name, $row->vid);
+  }
+  db_drop_field($ret, 'draggableviews_structure', 'vid');
+  db_add_primary_key($ret, 'draggableviews_structure', array('nid', 'view_name', 'delta', 'args'));
+
+  db_drop_primary_key($ret, 'draggableviews_collapsed');
+  db_add_field($ret, 'draggableviews_collapsed', 'view_name', array('type' => 'varchar', 'length' => 32, 'not null' => TRUE, 'default' => ''));
+  // Update code.
+  $result = db_query('SELECT vid FROM {draggableviews_collapsed}');
+  while($row = db_fetch_object($result)) {
+    $view = db_fetch_object(db_query('SELECT name FROM {views_view} WHERE vid=%d', $row->vid));
+    db_query("UPDATE {draggableviews_collapsed} SET view_name='%s' WHERE vid=%d", $view->name, $row->vid);
+  }
+  db_drop_field($ret, 'draggableviews_collapsed', 'vid');
+  db_add_primary_key($ret, 'draggableviews_collapsed', array('uid', 'parent_nid', 'view_name'));
+
+  return $ret;
+}

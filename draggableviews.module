@@ -126,27 +126,21 @@ function draggableviews_theme() {
     'arguments' => array('form' => NULL),
   );
 
-  $array['draggableviews_view_draggabletable_form_new'] = array(
-    'template' => 'draggableviews-view-draggabletable-form',
-    'preprocess functions' => array(
-      'template_preprocess_draggableviews_view_draggabletable_form',
-    ),
-    'arguments' => array('form' => NULL),
-  );
-
   // Register theme function for all views.
   $views = views_get_all_views();
   foreach ($views AS $view) {
     $view->init_display();
     foreach ($view->display AS $display_id => $display) {
-      if (strcmp($display->handler->get_plugin('style')->definition['handler'], 'draggableviews_plugin_style_draggabletable') == 0) {
-        $array['draggableviews_view_draggabletable_form_'. $view->name .'_'. $display_id] = array(
-          'template' => 'draggableviews-view-draggabletable-form',
-          'preprocess functions' => array(
-            'template_preprocess_draggableviews_view_draggabletable_form',
-          ),
-          'arguments' => array('form' => NULL),
-        );
+      if (is_object($display->handler)) {
+        if (strcmp($display->handler->get_plugin('style')->definition['handler'], 'draggableviews_plugin_style_draggabletable') == 0) {
+          $array['draggableviews_view_draggabletable_form_'. $view->name .'_'. $display_id] = array(
+            'template' => 'draggableviews-view-draggabletable-form',
+            'preprocess functions' => array(
+              'template_preprocess_draggableviews_view_draggabletable_form',
+            ),
+            'arguments' => array('form' => NULL),
+          );
+        }
       }
     }
   }
@@ -163,11 +157,6 @@ function draggableviews_theme() {
 function draggableviews_views_pre_execute(&$view) {
   if ($view->style_plugin->definition['handler'] != 'draggableviews_plugin_style_draggabletable') {
     // This view doesn't use draggable_table style plugin. Nothing to do.
-    return;
-  }
-
-  if (!is_numeric($view->vid)) {
-    // The view hasn't been saved yet. Can't do anything.
     return;
   }
 
@@ -396,12 +385,12 @@ function draggableviews_view_draggabletable_form_submit($vars) {
       if (ereg('draggableviews_collapsed_', $key)) {
         $parent_nid = drupal_substr($key, 25);
         db_query("DELETE FROM {draggableviews_collapsed}
-                  WHERE uid=%d AND parent_nid=%d AND vid=%d",
-                  $uid, $parent_nid, $view->vid);
+                  WHERE uid=%d AND parent_nid=%d AND view_name='%s'",
+                  $uid, $parent_nid, $view->name);
 
         db_query("INSERT INTO {draggableviews_collapsed}
-                  (uid, vid, parent_nid, collapsed) VALUES (%d, %d, %d, %d)",
-                  $uid, $view->vid, $parent_nid, $val);
+                  (uid, view_name, parent_nid, collapsed) VALUES (%d, '%s', %d, %d)",
+                  $uid, $view->name, $parent_nid, $val);
       }
     }
   }

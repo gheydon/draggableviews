@@ -250,7 +250,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
   if (isset($info['hierarchy'])) {
     // Fetch expand information from database.
     $uid = $info['expand_links']['by_uid'] ? $user->uid : 0;
-    $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid=%d AND vid=%d", $uid, $view->vid);
+    $result = db_query("SELECT parent_nid, collapsed FROM {draggableviews_collapsed} WHERE uid=%d AND view_name='%s'", $uid, $view->name);
     $states = array();
     while ($state = db_fetch_object($result)) {
       $states[$state->parent_nid] = $state->collapsed;
@@ -306,10 +306,10 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
   $vars['view'] = theme($style_plugin->theme_functions(), $style_plugin->view, $style_plugin->options, $style_plugin->view->result, '');
 
   // Don't render the submit form..
-  // - if view hasn't been saved yet or
   // - if user has no access or
   // - if structure is locked.
-  if (is_numeric($style_plugin->view->vid) && user_access('Allow Reordering') && !$info['locked']) {
+
+  if (user_access('Allow Reordering') && !$info['locked']) {
     $vars['form'] =  drupal_render($vars['form']);
   }
   else {
