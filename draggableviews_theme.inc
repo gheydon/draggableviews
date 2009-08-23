@@ -276,6 +276,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
                         'draggableviews' => array(
                           $vars['tabledrag_table_id'] => array(
                             'expand_default' => $options['tabledrag_expand']['collapsed'] ? 1 : 0,
+                            'states' => array(),
                           ),
                         ),
                       ),
