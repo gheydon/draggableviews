@@ -144,6 +144,8 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       $current = $this->options;
     }
 
+    if (!isset($current['tabledrag_types'])) $current['tabledrag_types'] = array();
+
     $form['tabledrag_header'] = array(
       '#prefix' => '<div style="background: #F6F6F6; border-top: 1px solid #D6DBDE; font-weight: bold; padding: 1em 1em 0;">',
       '#suffix' => '</div>',
@@ -250,7 +252,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
           'node_type' => array(
             '#type' => 'select',
             '#options' => $node_types,
-            '#default_value' => isset($current['tabledrag_types'][$i]['node_type']) ? $current['tabledrag_types'][$i]['node_type'] : $node_types[0],
+            '#default_value' => isset($current['tabledrag_types'][$i]['node_type']) ? $current['tabledrag_types'][$i]['node_type'] : key($node_types),
           ),
           'type' => array(
             '#type' => 'select',

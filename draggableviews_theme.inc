@@ -6,7 +6,7 @@
  * Theme functions.
  */
 
-function template_preprocess_draggableviews_view_draggabletable(&$vars) {
+function template_preprocess_draggableviews_view_draggabletable(&$vars, $style_plugin_name) {
   $view     = $vars['view'];
 
   // We need the raw data for this grouping, which is passed in as $vars['rows'].
@@ -114,8 +114,11 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
   // Draggableviews output begin
 
   $info = $view->draggableviews_info;
+  $form_elements = &$view->form_elements;
 
   if (!isset($info['order'])) return;
+
+  $vars['tabledrag_type'] = array();
 
   // loop through all rows the view returned
   foreach ($vars['rows'] as $i => $row) {
@@ -125,17 +128,9 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     // build indentation (as tabledrag requires)
     $indentation = theme('indentation', $info['nodes'][$nid]['depth']);
 
-    // get node object
-    switch ($view->base_table) {
-      case 'users':
-        $node = user_load($nid);
-        break;
-      case 'node':
-        $node = node_load(array('nid' => $nid));
-        break;
-    }
-
     if (strcmp($view->base_table, 'node') == 0) {
+      // Get node object.
+      $node = node_load(array('nid' => $nid));
       if (isset($info['types'][$node->type])) {
         // set node type specification, if available (e.g. tabledrag-root)
         $vars['tabledrag_type'][$i] = 'tabledrag-'. $info['types'][$node->type];
@@ -155,23 +150,17 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     foreach (array('hierarchy', 'order') AS $modus) {
       if (isset($info[$modus])) {
         if ($modus == 'hierarchy') {
-          $value = $info['nodes'][$nid]['parent'];
-
           // get the field that should be rendered
-          $field = &$info['hierarchy']['field'];
+          $field = $info['hierarchy']['field'];
         }
         else {
-          // get depth of current field
-          $depth = $info['nodes'][$nid]['depth'];
-
-          $value = $info['nodes'][$nid]['order'][$depth];
-
           // get the field that should be rendered
-          $field = &$info['order']['field'];
+          $field = $info['order']['field'];
         }
 
-        // Get the form element.
-        $form_element = $field['handler']->get_form_element($value, array('field_name' => $field['field_name'] .'_'. $nid, 'class' => $field['field_name']));
+        // Get the form element. The field_ prefix prevents a possible conflict
+        // with the hidden_nid field.
+        $form_element = &$form_elements[$i]['field_'. $field['field_name']];
 
         // Render the new form element.
         $vars['rows'][$i][$field['field_name']] = drupal_render($form_element);
@@ -190,20 +179,13 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars) {
     if (isset($info['hierarchy'])) {
       // Put indentation in front of first field and append rendered hidden node id
       // that we need for tabledrag and expand/collapse.
-      $hidden_nid = array(
-        '#type' => 'hidden',
-        '#name' => 'hidden_nid',
-        '#value' => $nid,
-        '#attributes' => array('class' => 'hidden_nid'),
-      );
+      $hidden_nid = &$form_elements[$i]['hidden_nid'];
       $key = key($vars['rows'][$i]);
       $vars['rows'][$i][$key] = $indentation . $vars['rows'][$i][$key] . drupal_render($hidden_nid);
     }
 
     // Mark extended nodes.
-    if ($info['nodes'][$nid]['extension'] == TRUE) {
-      $vars['draggableviews_extended'][$i] = TRUE;
-    }
+    $vars['draggableviews_extended'][$i] = !empty($info['nodes'][$nid]['extension']);
 
     // Let extension modules alter the output.
     foreach (module_implements('draggableviews_row_alter') as $module) {
@@ -304,6 +286,9 @@ function template_preprocess_draggableviews_view_draggabletable_form($vars) {
   // Get structured info array.
   $info = $style_plugin->view->draggableviews_info;
 
+  // Keep the already created form elements "in mind". We'll need them later when we theme the view.
+  $style_plugin->view->form_elements = &$vars['form']['rows'];
+  
   $vars['view'] = theme($style_plugin->theme_functions(), $style_plugin->view, $style_plugin->options, $style_plugin->view->result, '');
 
   // Don't render the submit form..
@@ -372,6 +357,10 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   // Render Draggable view settings
   // The following lines add the new output from draggableviews
 
+  // Build header.
+  $tabledrag_header = drupal_render($form['tabledrag_header']);
+  $description_tabledrag = drupal_render($form['tabledrag_description']);
+
   // Build order table.
   $tabledrag_order_columns = array();
   $tabledrag_order_columns[] = 'Order Field:';
@@ -434,7 +423,6 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   $output .= $description_tabledrag;
   $output .= $description_order;
   $output .= theme('table', array('&nbsp;', t('Field'), t('Handler')), array($tabledrag_order_columns));
-  $output .= $tabledrag_order_add;
   $output .= $tabledrag_order_visible;
   // Append hierarchy settings.
   $output .= theme('table', array('&nbsp;', t('Field'), t('Handler')), array($tabledrag_hierarchy_columns));
@@ -450,7 +438,6 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   }
   // Append expand yes/no checkbox to output.
   $output .= $tabledrag_expand;
-  $output .= $tabledrag_expand_default;
   // Append page extensions output.
   $output .= $description_extensions;
   $output .= $draggableviews_extensions;

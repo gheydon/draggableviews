@@ -74,6 +74,7 @@ function draggableviews_menu() {
 function draggableviews_forms() {
   $args = func_get_args();
   $form_id = $args[0];
+  $forms = array();
   if (strpos($form_id, "draggableviews_view_draggabletable_form") === 0) {
     $forms[$form_id] = array(
       'callback' => 'draggableviews_view_draggabletable_form',
@@ -85,7 +86,9 @@ function draggableviews_forms() {
 /**
  * Build the form
  */
-function draggableviews_view_draggabletable_form($form_state, $view) {
+function draggableviews_view_draggabletable_form($form_state, &$style_plugin) {
+  $view = $style_plugin->view;
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
@@ -93,8 +96,8 @@ function draggableviews_view_draggabletable_form($form_state, $view) {
   $form['#submit'][] = 'draggableviews_view_draggabletable_form_submit';
   // Use pager information and all exposed input data to build the query.
   $query = 'page='. $_GET['page'];
-  if (isset($view->view->exposed_input)) {
-    foreach ($view->view->exposed_input AS $filter => $data) {
+  if (isset($view->exposed_input)) {
+    foreach ($view->exposed_input AS $filter => $data) {
       if ($filter == 'order') continue;
       if (is_array($data)) {
         foreach ($data AS $key1 => $value1) {
@@ -114,6 +117,48 @@ function draggableviews_view_draggabletable_form($form_state, $view) {
     }
   }
   $form['#redirect'] = array('path' => $_GET['q'], 'query' => $query);
+
+  $info = &$view->draggableviews_info;
+
+  foreach ($view->result AS $i => $result) {
+    $nid = $result->{$view->base_field};
+    
+    // This for loop should prevent copy->paste'ing code.
+    foreach (array('hierarchy', 'order') AS $modus) {
+      if (isset($info[$modus])) {
+        if ($modus == 'hierarchy') {
+          $value = $info['nodes'][$nid]['parent'];
+
+          // get the field that should be rendered
+          $field = &$info['hierarchy']['field'];
+        }
+        else {
+          // get depth of current field
+          $depth = $info['nodes'][$nid]['depth'];
+
+          $value = $info['nodes'][$nid]['order'][$depth];
+
+          // get the field that should be rendered
+          $field = &$info['order']['field'];
+        }
+
+        // Get the form element.
+        $form_element = $field['handler']->get_form_element($value, array('field_name' => $field['field_name'] .'_'. $nid, 'class' => $field['field_name']));
+
+        // Render the new form element. The field_ prefix prevents a possible conflict
+        // with the hidden_nid field.
+        $form['rows'][$i]['field_'. $field['field_name']] = $form_element;
+      }
+    }
+
+    if (isset($info['hierarchy'])) {
+      $form['rows'][$i]['hidden_nid'] = array(
+        '#type' => 'hidden',
+        '#value' => $nid,
+        '#attributes' => array('class' => 'hidden_nid'),
+      );
+    }
+  }
   return $form;
 }
 
@@ -181,14 +226,17 @@ function draggableviews_views_pre_execute(&$view) {
   $view->get_total_rows = TRUE;
 
   $info['pager'] = $info['view']->pager;
+  $info['globals'] = array();
 
   if ($info['pager']['items_per_page'] > 0) {
     // Paging is beeing used. We modify some paging settings before the view gets executed.
 
     // We let views think that the current page is 0, but we also backup the actual value. We
     // will restore it after finishing all operations (see hook_views_pre_render).
-    $info['globals']['page'] = $_GET['page'];
-    $pager_page_array = isset($_GET['page']) ? explode(',', $_GET['page']) : array();
+    
+    $info['globals']['page'] = isset($_GET['page']) ? $_GET['page'] : NULL;
+    $pager_page_array =  isset($_GET['page']) ? explode(',', $_GET['page']) : array();
+
     if (!empty($pager_page_array[$info['pager']['element']]) && $pager_page_array[$info['pager']['element']] > 0) {
       $info['pager']['current_page'] = intval($pager_page_array[$info['pager']['element']]);
     }
@@ -250,7 +298,7 @@ function draggableviews_views_pre_render(&$view) {
   $view->draggableviews_info = _draggableviews_info($view, $view->draggableviews_info);
   $info = &$view->draggableviews_info;
 
-  if ($info['pager']['items_per_page'] > 0 && !$info['hierarchy']) {
+  if ($info['pager']['items_per_page'] > 0 && empty($info['hierarchy'])) {
     // The current page of hierarchies cannot be checked here because $views->total_rows will not be
     // calculated when the entire view gets loaded.
     if ($info['pager']['current_page'] * $info['pager']['items_per_page'] >= $view->total_rows + $view->pager['offset']) {
@@ -259,7 +307,7 @@ function draggableviews_views_pre_render(&$view) {
     }
   }
 
-  if ($_GET['order']) {
+  if (!empty($_GET['order'])) {
     // CASE A) Click sort was used. Assign order values manually.
 
     _draggableviews_click_sort($info);
@@ -270,7 +318,7 @@ function draggableviews_views_pre_render(&$view) {
   else {
     // CASE B) Extend view and check structure.
 
-    if ($info['hierarchy']) {
+    if (isset($info['hierarchy'])) {
       // Shrink views window in case of paging and reload view.
       $range = _draggableviews_extend_view_window($info, TRUE);
     }
@@ -338,12 +386,6 @@ function draggableviews_view_draggabletable_form_submit($vars) {
     return;
   }
 
-  // Check if structure is locked.
-  if ($info['locked']) {
-    drupal_set_message(t('The structure is locked.'), 'error');
-    return;
-  }
-
   // Gather all needed information.
   $view    = $vars['#parameters'][2]->view;
   $results = $view->result;
@@ -353,7 +395,7 @@ function draggableviews_view_draggabletable_form_submit($vars) {
   if (!isset($info['order'])) return;
 
   // Check if structure is locked.
-  if ($info['locked']) {
+  if (!empty($info['locked'])) {
     drupal_set_message(t('The structure is locked.'), 'error');
     return;
   }
