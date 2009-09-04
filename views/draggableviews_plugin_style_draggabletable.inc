@@ -121,7 +121,6 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     // Tell the theme which base_table is beeing used.
     $form['#base_table'] = $this->view->base_table;
 
-    $input = array();
     $input = $form_state['input'];
 
     // Get all system-wide node types as a keyed array.

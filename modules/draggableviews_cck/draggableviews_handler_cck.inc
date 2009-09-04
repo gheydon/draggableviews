@@ -68,8 +68,6 @@ class draggableviews_handler_cck {
   }
 
   function get_form_element($value, $attributes = array()) {
-    if (!isset($attributes['class'])) $attributes['class'] = $field['field_name'];
-
     switch ($this->field->content_field['widget']['type']) {
       case 'optionwidgets_select':
         $options = array();

@@ -37,8 +37,6 @@ class draggableviews_handler_taxonomy {
   }
 
   function get_form_element($value, $attributes = array()) {
-    if (!isset($attributes['class'])) $attributes['class'] = $field['field_name'];
-
     switch ($this->type) {
       default:
         $options = array();

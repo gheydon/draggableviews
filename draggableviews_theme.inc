@@ -113,6 +113,8 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars, $style_p
 
   // Draggableviews output begin
 
+  $vars['tabledrag_table_id'] = 'draggableview_'. $view->name .'_'. $vars['id'];
+
   $info = $view->draggableviews_info;
   $form_elements = &$view->form_elements;
 
@@ -193,9 +195,6 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars, $style_p
       $function($vars['rows'][$i], $nid, $info, $view);
     }
   }
-
-  // Output data.
-  $vars['tabledrag_table_id'] = 'draggableview_'. $view->name .'_'. $vars['id'];
 
   if (user_access('Allow Reordering') && !$info['locked']) {
     // Prepare tabledrag settings for output.

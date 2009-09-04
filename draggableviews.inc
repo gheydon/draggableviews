@@ -87,6 +87,10 @@ function _draggableviews_info($view, $info = NULL) {
   // if there is already an info array just rebuild the nodes array and skip this section
   if (!isset($info)) {
     $info = array();
+    
+    // Hold a reference of the view object itself. The handlers might need it,
+    // so we have to attach it now.
+    $info['view'] = &$view;
 
     // extract draggableviews settings.
     if ($options['tabledrag_order']['field'] && strcmp($options['tabledrag_order']['field'], 'none') != 0) {
@@ -145,13 +149,13 @@ function _draggableviews_info($view, $info = NULL) {
       $info['locked'] = strcmp($options['tabledrag_lock']['lock'], 'lock') == 0 ? TRUE : FALSE;
     }
   }
+  
+  // Refresh the reference of the view object itself.
+  $info['view'] = &$view;
 
   $info['depth'] = 0;
 
   $info['default_on_top'] = $options['draggableviews_default_on_top'] == 1 ? TRUE : FALSE;
-
-  // Hold a reference of the view object itself.
-  $info['view'] = &$view;
 
   // Get all nodes and their properties.
   $info['nodes'] = array();
