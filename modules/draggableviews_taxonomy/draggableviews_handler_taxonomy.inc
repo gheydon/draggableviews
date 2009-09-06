@@ -25,6 +25,10 @@ class draggableviews_handler_taxonomy {
     }
   }
 
+  function get($value) {
+    return $value;
+  }
+
   function save($tid, $value) {
     switch ($this->type) {
       case 'order':

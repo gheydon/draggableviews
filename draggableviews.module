@@ -12,6 +12,8 @@
 define('DRAGGABLEVIEWS_SAFE_OFFSET', 0.0001);
 // The minimum value is used for unused levels to prevent display errors.
 define('DRAGGABLEVIEWS_MIN_VALUE', -1);
+// SQL doesn't support an OFFSET without a LIMIT, so we choose a high number for LIMIT.
+define('DRAGGABLEVIEWS_DBQUERY_LIMIT', 99999999);
 
 require_once './'. drupal_get_path('module', 'draggableviews') .'/draggableviews.inc';
 require_once './'. drupal_get_path('module', 'draggableviews') .'/draggableviews_theme.inc';
@@ -213,14 +215,14 @@ function draggableviews_views_pre_execute(&$view) {
   // Get info array.
   $info = _draggableviews_info($view);
 
+  // Attach the info array to the view object.
+  // We need to use a reference because the info array will change.
+  $view->draggableviews_info = &$info;
+
   if (!isset($info['order'])) {
     // Nothing to do.
     return;
   }
-
-  // Attach the info array to the view object.
-  // We need to use a reference because the info array will change.
-  $view->draggableviews_info = &$info;
 
   // We want the view to execute the count query. New nodes which should be added to the very end will use this value.
   $view->get_total_rows = TRUE;
@@ -249,8 +251,8 @@ function draggableviews_views_pre_execute(&$view) {
 
     if (isset($info['hierarchy'])) {
       // In order to find hidden parents or child nodes we need to load the entire view.
-      // To induce that the entire view gets loaded we set to items_per_page to 0.
-      $info['view']->pager['items_per_page'] = 0;
+      // To induce that the entire view gets loaded we set to items_per_page to 999999999.
+      $info['view']->pager['items_per_page'] = DRAGGABLEVIEWS_DBQUERY_LIMIT;
       // Permissions checks cannot be done right now because the window probably must be extended
       // even if the user doesn't have permissions.
     }
@@ -286,13 +288,13 @@ function draggableviews_views_pre_execute(&$view) {
  * In both cases extend the visible window if paging is beeing used.
  */
 function draggableviews_views_pre_render(&$view) {
-  // Make sure the theme we need is loaded.
-  _draggableviews_ensure_theme('draggableviews_view_draggabletable_form_'. $view->name .'_'. $view->style_plugin->display->id);
-
   if (!isset($view->draggableviews_info)) {
     // This view doesn't use draggable_table style plugin. Nothing to do.
     return;
   }
+
+  // Make sure the theme we need is loaded.
+  _draggableviews_ensure_theme('draggableviews_view_draggabletable_form_'. $view->name .'_'. $view->style_plugin->display->id);
 
   // Initialize info array with the results of the executed view object.
   $view->draggableviews_info = _draggableviews_info($view, $view->draggableviews_info);
@@ -346,7 +348,12 @@ function draggableviews_views_pre_render(&$view) {
     global $pager_page_array, $pager_total, $pager_total_items;
     // The global $pager_total variable was calculated with wrong values because we changed the
     // global $_GET['page'] and $view->pager['items_per_page'] variable in hook_pre_execute.
-    $pager_total[$info['pager']['element']] = ceil(($info['view']->total_rows + $range['first_index']) / $info['pager']['items_per_page']);
+    if (isset($info['view']->total_rows)) {
+      $pager_total[$info['pager']['element']] = ceil(($info['view']->total_rows + $range['first_index']) / $info['pager']['items_per_page']);
+    }
+    else {
+      $pager_total[$info['pager']['element']] = 0;
+    }
     // Restore the global variable.
     $pager_page_array[$info['pager']['element']] = $info['pager']['current_page'];
     // Restore the _GET variable.

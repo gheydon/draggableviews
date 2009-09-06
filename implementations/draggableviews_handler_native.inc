@@ -27,6 +27,10 @@ class draggableviews_handler_native {
     }
   }
 
+  function get($value) {
+    return $value;
+  }
+
   function save($nid, $value) {
     $args = NULL;
 

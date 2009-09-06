@@ -93,7 +93,7 @@ function _draggableviews_info($view, $info = NULL) {
     $info['view'] = &$view;
 
     // extract draggableviews settings.
-    if ($options['tabledrag_order']['field'] && strcmp($options['tabledrag_order']['field'], 'none') != 0) {
+    if (!empty($options['tabledrag_order']['field']) && strcmp($options['tabledrag_order']['field'], 'none') != 0) {
       if ($handler = _draggableviews_init_handler($options['tabledrag_order'], $view)) {
         $info['order'] = array(
           'field' => array(
@@ -111,7 +111,7 @@ function _draggableviews_info($view, $info = NULL) {
       }
       $info['order']['visible'] = strcmp($options['tabledrag_order_visible']['visible'], 'visible') == 0 ? TRUE : FALSE;
 
-      if ($options['tabledrag_hierarchy']['field'] && strcmp($options['tabledrag_hierarchy']['field'], 'none') != 0) {
+      if (!empty($options['tabledrag_hierarchy']['field']) && strcmp($options['tabledrag_hierarchy']['field'], 'none') != 0) {
         if ($handler = _draggableviews_init_handler($options['tabledrag_hierarchy'], $view)) {
           $info['hierarchy'] = array(
             'field' => array(
@@ -155,7 +155,7 @@ function _draggableviews_info($view, $info = NULL) {
 
   $info['depth'] = 0;
 
-  $info['default_on_top'] = $options['draggableviews_default_on_top'] == 1 ? TRUE : FALSE;
+  $info['default_on_top'] = !empty($options['draggableviews_default_on_top']) ? TRUE : FALSE;
 
   // Get all nodes and their properties.
   $info['nodes'] = array();
@@ -163,7 +163,7 @@ function _draggableviews_info($view, $info = NULL) {
     // loop through all resulting nodes
     foreach ($results as $row) {
       if (is_numeric($row->{$info['order']['field']['field_alias']})) {
-        $info['nodes'][$row->{$view->base_field}]['order'][0] = (int)($row->{$info['order']['field']['field_alias']});
+        $info['nodes'][$row->{$view->base_field}]['order'][0] = $info['order']['field']['handler']->get((int)($row->{$info['order']['field']['field_alias']}));
       }
       else {
         // Default position of new nodes. We cannot use $view->total_rows instead of 99999999 because
@@ -171,7 +171,7 @@ function _draggableviews_info($view, $info = NULL) {
         $info['nodes'][$row->{$view->base_field}]['order'][0] = $info['default_on_top'] == 1 ? -1 : 99999999;
       }
       if (isset($info['hierarchy'])) {
-        $info['nodes'][$row->{$view->base_field}]['parent'] = (int)($row->{$info['hierarchy']['field']['field_alias']});
+        $info['nodes'][$row->{$view->base_field}]['parent'] = $info['hierarchy']['field']['handler']->get((int)$row->{$info['hierarchy']['field']['field_alias']});
       }
     }
   }
@@ -321,15 +321,15 @@ function _draggableviews_build_hierarchy(&$info) {
  */
 function _draggableviews_rebuild_hierarchy(&$info) {
   // We backup the page settings and restore them after completing all operations.
-  $backup_pager = $info['view']->pager;
+  $pager = $info['view']->pager;
 
-  if ($backup_pager['items_per_page'] > 0) {
+  if ($pager['items_per_page'] > 0) {
     // We have to make sure that there's no hidden node with an order value that refers to the current page.
     // If the items to display per page are limitated we load the entire view.
 
     //@todo: We reduce the fields to a minimum because of performance issues.
 
-    _draggableviews_reload_info($info, 0, 0, 0);
+    _draggableviews_reload_info($info, DRAGGABLEVIEWS_DBQUERY_LIMIT, 0, $pager['offset']);
   }
 
   // Calculate depth values.
@@ -355,7 +355,7 @@ function _draggableviews_rebuild_hierarchy(&$info) {
   // We just sort the nodes by their current order values and
   // then we subsequently assign ascending numbers.
   _draggableviews_sort_nodes($info['nodes']);
-  _draggableviews_ascending_numbers($info, 0, TRUE);
+  _draggableviews_ascending_numbers($info, $pager['offset'], TRUE);
 
   // Save hierarchy.
   _draggableviews_save_hierarchy($info);
@@ -477,19 +477,6 @@ function _draggableviews_ascending_numbers(&$info, $offset = 0, $renumber = FALS
  *   An array containing the new, calculated range.
  */
 function _draggableviews_extend_view_window(&$info, $reload = FALSE) {
-  // Check page settings.
-  if ($info['pager']['items_per_page'] <= 0) {
-    // Nothing to do. Just [reload the view and] return the actual range.
-    if ($reload) {
-      // Re-execute the view and reload the info array.
-      _draggableviews_reload_info($info);
-    }
-    return array(
-      'first_index' => 0,
-      'last_index' => count($info['view']->result) - 1,
-    );
-  }
-
   // Notice that we have two sets of pager information:
   // - The "should-be" values at $info['pager']
   // - The real, current values at $view->pager.
@@ -498,6 +485,19 @@ function _draggableviews_extend_view_window(&$info, $reload = FALSE) {
   $items_per_page = $info['pager']['items_per_page'];
   $current_page   = $info['pager']['current_page'];
   $offset         = $info['pager']['offset'];
+
+  // Check page settings.
+  if ($items_per_page <= 0) {
+    // Nothing to do. Just [reload the view and] return the actual range.
+    if ($reload) {
+      // Re-execute the view and reload the info array.
+      _draggableviews_reload_info($info);
+    }
+    return array(
+      'first_index' => $offset,
+      'last_index' => count($info['view']->result) - 1 + $offset,
+    );
+  }
 
   $first_index = $items_per_page * $current_page;
   $last_index  = $items_per_page * ($current_page + 1) - 1;
@@ -602,8 +602,8 @@ function _draggableviews_extend_view_window(&$info, $reload = FALSE) {
   }
 
   return array(
-    'first_index' => $first_index,
-    'last_index' => $last_index,
+    'first_index' => $first_index + $offset,
+    'last_index' => $last_index + $offset,
   );
 }
 
@@ -633,7 +633,7 @@ function _draggableviews_click_sort(&$info) {
   // If the items to display per page are limited we load the entire view.
   $pager = $info['view']->pager;
   if ($pager['items_per_page'] > 0) {
-    _draggableviews_reload_info($info, 0, 0, 0);
+    _draggableviews_reload_info($info, DRAGGABLEVIEWS_DBQUERY_LIMIT, 0, $pager['offset']);
   }
 
   // First bring all child nodes down to the root level. We can't keep the hierarchy information
@@ -645,7 +645,7 @@ function _draggableviews_click_sort(&$info) {
     }
   }
   // Assign ascending numbers
-  _draggableviews_ascending_numbers($info, 0, TRUE);
+  _draggableviews_ascending_numbers($info, $pager['offset'], TRUE);
   _draggableviews_save_hierarchy($info);
 
   // Re-execute view with original page settings.

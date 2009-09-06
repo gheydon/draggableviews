@@ -28,6 +28,10 @@ class draggableviews_handler_cck {
     $this->allowed_values  = content_allowed_values($this->field->content_field);
   }
 
+  function get($value) {
+    return $value;
+  }
+
   function save($nid, $value) {
     $node = node_load(array('nid' => $nid));
     $type = content_types($node->type);
