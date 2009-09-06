@@ -61,7 +61,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
         $found = TRUE;
       }
     }
-    if ($fields[$first_field]['exclude']) {
+    if (!empty($fields[$first_field]['exclude'])) {
       $found = TRUE;
     }
     if ($found) {
