@@ -1,0 +1,7 @@
+; $Id$
+name = DraggableViews Book handler
+description = Provides Book support.
+dependencies[] = draggableviews
+dependencies[] = book
+package = Views
+core = 6.x

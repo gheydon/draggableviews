@@ -1,0 +1,7 @@
+; $Id$
+name = DraggableViews Taxonomy handler
+description = Provides Taxonomy support for both order fields and parent fields.
+dependencies[] = draggableviews
+dependencies[] = taxonomy
+package = Views
+core = 6.x
