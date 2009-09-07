@@ -9,47 +9,60 @@
 /*
  * Default Implementation with Books.
  */
-class draggableviews_handler_book {
+class draggableviews_handler_book extends draggableviews_handler {
   function init($field_name, &$view) {
-    $this->view = $view;
+    parent::init($field_name, &$view);
 
-    $this->field_name = $field_name;
-
-    $this->view = &$view;
-
-    if ($field_name == $view->style_plugin->options['tabledrag_hierarchy']['field']) {
-      $this->type = 'hierarchy';
-      $this->root = 0;
-      // Check if filters or arguments define another root parent.
-      $options = $view->style_plugin->options;
-      if (isset($options['draggableviews_book_radios'])) {
-        switch ($options['draggableviews_book_radios']) {
-          case 1:
-            $argument = $options['draggableviews_book_argument'];
-            if (isset($this->view->argument[$argument]->position)) {
-              $position = $this->view->argument[$argument]->position;
-              $this->root = $this->view->args[$position];
-            }
+    $this->root = 0;
+    // Check if filters or arguments define another root parent.
+    $options = $view->style_plugin->options;
+    if (isset($options['draggableviews_book_radios'])) {
+      switch ($options['draggableviews_book_radios']) {
+        case 1:
+          $argument = $options['draggableviews_book_argument'];
+          if (isset($this->view->argument[$argument]->position)) {
+            $position = $this->view->argument[$argument]->position;
+            $root_nid = $this->view->args[$position];
+          }
+          break;
+        case 2:
+          $filter = $options['draggableviews_book_filter'];
+          if (isset($this->view->filter[$filter]->options['value']['value'])) {
+            $root_nid = $this->view->filter[$filter]->options['value']['value'];
+          }
+          break;
+      }
+      if (!empty($root_nid)) {
+        // Depending on the type of this field we now define the root nid or the root weight.
+        switch ($this->type) {
+          case 'hierarchy':
+            // Define the mlid of the parent item as root.
+            $this->root = $root_nid;
             break;
-          case 2:
-            $filter = $options['draggableviews_book_filter'];
-            if (isset($this->view->filter[$filter]->options['value']['value'])) {
-              $this->root = $this->view->filter[$filter]->options['value']['value'];
+          case 'order':
+            $mlid = db_result(db_query("SELECT mlid FROM {book} WHERE nid = %d", $root_nid));
+            if (!empty($mlid)) {
+              $weight = db_result(db_query("SELECT weight FROM {menu_links} WHERE mlid = %d", $mlid));
+              // Define the weight of the parent item as root.
+              $this->root = $weight;
             }
             break;
         }
       }
     }
-    else {
-      $this->type = 'order';
-    }
   }
 
   function get($value) {
-    if ($this->type == 'hierarchy') {
-      if ($value == $this->root) {
-        return 0;
-      }
+    switch ($this->type) {
+      case 'hierarchy':
+        if ($value == $this->root) {
+          // We simulate that this node is the first root item of the structure.
+          return 0;
+        }
+        break;
+      case 'order':
+          return $value - ($this->root + 1);
+        break;
     }
     return $value;
   }
@@ -59,45 +72,19 @@ class draggableviews_handler_book {
     $node = node_load($nid, NULL, TRUE);
     switch ($this->type) {
       case 'hierarchy':
-        // Recover the actual root parent.
-        if ($value == 0) $value = $this->root;
+        if ($value == 0) {
+          // This is the simulated "first root item". Restore the actual value now.
+          $value = $this->root;
+        }
         $node->book['plid'] = db_result(db_query("SELECT mlid FROM {book} WHERE nid = %d", $value));
         break;
       case 'order':
-        $node->book['weight'] = $value;
+        // The order value of the simulated "first root item" is 0. So the order value of
+        // the parent item + 1 (previous order value) must be added to each order value.
+        $node->book['weight'] = $value + ($this->root + 1);
         break;
     }
     $node = node_submit($node);
     node_save($node);
-  }
-
-  function get_form_element($value, $attributes = array()) {
-    switch ($this->type) {
-      default:
-        $options = array();
-        for ($i = $this->range_start; $i <= $this->range_end; $i++) $options[$i] = $i;
-
-        return array(
-          '#type'  => 'select',
-          '#name'  => $attributes['field_name'],
-          '#value' => $value,
-          '#options' => $options,
-          '#attributes' => array('class' => $attributes['class']),
-        );
-        break;
-
-      case 'hierarchy':
-        return array(
-          '#type' => 'hidden',
-          '#name' => $attributes['field_name'],
-          '#value' => $value,
-          '#attributes' => array('class' => $attributes['class']),
-        );
-    }
-  }
-
-  function set_range($start, $end) {
-    $this->range_start = $start;
-    $this->range_end   = $end;
   }
 }

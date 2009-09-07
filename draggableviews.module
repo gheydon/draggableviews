@@ -10,8 +10,9 @@
 // The safe offset guarantees that all order values are unique.
 // (This is essential to make sure that child nodes appear right after their parents)
 define('DRAGGABLEVIEWS_SAFE_OFFSET', 0.0001);
-// The minimum value is used for unused levels to prevent display errors.
-define('DRAGGABLEVIEWS_MIN_VALUE', -1);
+// The minimum value is used for unused levels to prevent display errors. Order values should always
+// be >= 0. The value -1 allows new nodes to appear on the very top.
+define('DRAGGABLEVIEWS_MIN_VALUE', -2);
 // SQL doesn't support an OFFSET without a LIMIT, so we choose a high number for LIMIT.
 define('DRAGGABLEVIEWS_DBQUERY_LIMIT', 99999999);
 
@@ -329,7 +330,7 @@ function draggableviews_views_pre_render(&$view) {
       $range = _draggableviews_extend_view_window($info, FALSE);
     }
 
-    if (!_draggableviews_quick_check_structure($info)) {
+    if ($info['repair_if_broken'] && !_draggableviews_quick_check_structure($info)) {
       // The structure is broken and has to be repaired. We restore the original page settings now because
       // the current settings are based on a broken structure.
       $info['view']->pager = $info['pager'];
@@ -526,6 +527,49 @@ function draggableviews_draggableviews_handlers() {
  */
 function draggableviews_perm() {
   return array('Allow Reordering');
+}
+
+/**
+ * Implementing hook_draggableviews_style_plugin_form_alter.
+ * 
+ * Define style plugin settings for the native handler.
+ */
+function draggableviews_draggableviews_style_plugin_form_alter(&$form, $form_state, $style_plugin) {
+  // Check for input.
+  if (count($form_state['input']) > 0) {
+    // Define the input data as the current data.
+    $current = $form_state['input']['style_options'];
+  }
+  else {
+    // Define the already stored data as the current data.
+    $current = $style_plugin->options;
+  }
+
+  $form['draggableviews_native_header'] = array(
+    '#prefix' => '<div style="background: #F6F6F6; border-top: 1px solid #D6DBDE; font-weight: bold; padding: 1em 1em 0;">',
+    '#suffix' => '</div>',
+    '#value' => t('@display: Style options: Native handler Settings', array('@display' => $style_plugin->display->display_title)),
+  );
+
+  $form['draggableviews_arguments'] = array(
+    '#type' => 'checkboxes',
+    '#name' => 'draggableviews_arguments',
+    '#options' => array('use_args' => t('Use arguments as well as view ID to order nodes.')),
+    '#description' => t('If checked, nodes can be reordered for any set of views arguments.  Use with care: If you have many combinations of arguments, your database could become very large.'),
+    '#default_value' => isset($current['draggableviews_arguments']) ? $current['draggableviews_arguments'] : array(),
+  );
+}
+
+/**
+ * Implementing hook_draggableviews_style_plugin_render.
+ * 
+ * Theme the style plugin settings for the native handler.
+ */
+function draggableviews_draggableviews_style_plugin_render(&$form) {
+  $header = drupal_render($form['draggableviews_native_header']);
+  $draggableviews_arguments = drupal_render($form['draggableviews_arguments']);
+
+  return $header . $draggableviews_arguments;
 }
 
 /**

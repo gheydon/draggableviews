@@ -70,14 +70,13 @@ function draggableviews_book_draggableviews_style_plugin_form_alter(&$form, $for
   $form['draggableviews_book_header'] = array(
     '#prefix' => '<div style="background: #F6F6F6; border-top: 1px solid #D6DBDE; font-weight: bold; padding: 1em 1em 0;">',
     '#suffix' => '</div>',
-    '#value' => t('@display: Style options: Book handler Settings:', array('@display' => $style_plugin->display->display_title)),
+    '#value' => t('@display: Style options: Book handler Settings', array('@display' => $style_plugin->display->display_title)),
   );
   $radio_id_none = form_clean_id('edit-default-use-book-none');
   $radio_id_argument = form_clean_id('edit-default-use-book-argument');
   $radio_id_filter = form_clean_id('edit-default-use-book-filter');
   $form['draggableviews_book_radios'] = array(
     '#type' => 'radios',
-    '#title' => t('Root Book by..'),
     '#default_value' => isset($current['draggableviews_book_radios']) ? $current['draggableviews_book_radios'] : 0,
     '#description' => t('Choose where to get the root book id from. The root book id defaults to 0.'),
     '#options' => array(t('None'), t('Argument'), t('Filter')),
@@ -95,7 +94,7 @@ function draggableviews_book_draggableviews_style_plugin_form_alter(&$form, $for
 }
 
 function draggableviews_book_draggableviews_style_plugin_render(&$form) {
-  $header   = drupal_render($form['draggableviews_book_header']);
+  $header = drupal_render($form['draggableviews_book_header']);
   
   $rows = array(
     array(drupal_render($form['draggableviews_book_radios'][0]), '&nbsp;'),
@@ -103,9 +102,11 @@ function draggableviews_book_draggableviews_style_plugin_render(&$form) {
     array(drupal_render($form['draggableviews_book_radios'][2]), drupal_render($form['draggableviews_book_filter'])),
   );
 
+  $radios = drupal_render($form['draggableviews_book_radios']);
+
   $table = theme('table', array(t('Use'), t('Root Book by..')), $rows);
 
-  return $header . $table;
+  return $header . $table . $radios;
 }
 
 /**
@@ -294,9 +295,9 @@ function draggableviews_book_views_default_views() {
     ),
   ));
   $handler->override_option('sorts', array(
-    'weight' => array(
+    'weight_1' => array(
       'order' => 'ASC',
-      'id' => 'weight',
+      'id' => 'weight_1',
       'table' => 'book_menu_links',
       'field' => 'weight',
       'override' => array(
@@ -304,11 +305,11 @@ function draggableviews_book_views_default_views() {
       ),
       'relationship' => 'none',
     ),
-    'depth' => array(
+    'p' => array(
       'order' => 'ASC',
-      'id' => 'depth',
+      'id' => 'p',
       'table' => 'book_menu_links',
-      'field' => 'depth',
+      'field' => 'p',
       'override' => array(
         'button' => 'Override',
       ),
@@ -382,6 +383,7 @@ function draggableviews_book_views_default_views() {
       'nid' => 'nid',
       'weight' => 'weight',
       'nid_1' => 'nid_1',
+      'weight_1' => 'weight_1',
     ),
     'info' => array(
       'title' => array(
@@ -401,6 +403,10 @@ function draggableviews_book_views_default_views() {
         'separator' => '',
       ),
       'nid_1' => array(
+        'sortable' => 0,
+        'separator' => '',
+      ),
+      'weight_1' => array(
         'sortable' => 0,
         'separator' => '',
       ),
@@ -425,6 +431,9 @@ function draggableviews_book_views_default_views() {
       'visible' => 0,
     ),
     'draggableviews_depth_limit' => '-1',
+    'draggableviews_repair' => array(
+      'repair' => 'repair',
+    ),
     'tabledrag_types_add' => 'Add type',
     'tabledrag_expand' => array(
       'expand_links' => 'expand_links',

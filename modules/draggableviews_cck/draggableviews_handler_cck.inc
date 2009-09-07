@@ -11,10 +11,7 @@
  */
 class draggableviews_handler_cck {
   function init($field_name, &$view) {
-    $this->view            = $view;
-    $this->pager           = $view->pager;
-
-    $this->field_name      = $field_name;
+    parent::init($field_name, &$view);
 
     $this->options         = $view->display['default']->display_options['style_options'];
     $this->fields          = $view->field;
@@ -26,10 +23,6 @@ class draggableviews_handler_cck {
     $this->field_type      = $this->fields[$field_name]->content_field['type'];
 
     $this->allowed_values  = content_allowed_values($this->field->content_field);
-  }
-
-  function get($value) {
-    return $value;
   }
 
   function save($nid, $value) {
@@ -69,36 +62,5 @@ class draggableviews_handler_cck {
     node_submit($node);
     // Finally save the node.
     node_save($node);
-  }
-
-  function get_form_element($value, $attributes = array()) {
-    switch ($this->field->content_field['widget']['type']) {
-      case 'optionwidgets_select':
-        $options = array();
-        for ($i = $this->range_start; $i <= $this->range_end; $i++) $options[$i] = $i;
-
-        return array(
-          '#type'  => 'select',
-          '#name'  => $attributes['field_name'],
-          '#value' => $value,
-          '#options' => $options,
-          '#attributes' => array('class' => $attributes['class']),
-        );
-        break;
-
-      case 'hidden':
-      default:
-        return array(
-          '#type' => 'hidden',
-          '#name' => $attributes['field_name'],
-          '#value' => $value,
-          '#attributes' => array('class' => $attributes['class']),
-        );
-    }
-  }
-
-  function set_range($start, $end) {
-    $this->range_start = $start;
-    $this->range_end   = $end;
   }
 }

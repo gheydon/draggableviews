@@ -142,6 +142,13 @@ function _draggableviews_info($view, $info = NULL) {
         }
       }
 
+      if (isset($options['draggableviews_repair']['repair'])) {
+        $info['repair_if_broken'] = strcmp($options['draggableviews_repair']['repair'], 'repair') == 0 ? TRUE : FALSE;
+      }
+      else {
+        $info['repair_if_broken'] = TRUE;
+      }
+
       $info['view_window_extensions'] = $options['draggableviews_extensions'];
       if (!isset($info['view_window_extensions']['extension_top'])) $info['view_window_extensions']['extension_top'] = 3;
       if (!isset($info['view_window_extensions']['extension_bottom'])) $info['view_window_extensions']['extension_bottom'] = 3;
@@ -691,8 +698,10 @@ function _draggableviews_calculate_depths(&$info) {
 
   // Loop through all rows the view returned.
   foreach ($info['nodes'] as $nid => $prop) {
-    if (!isset($info['nodes'][$nid]['parent']) || $info['nodes'][$nid]['parent'] < 0) $info['nodes'][$nid]['parent'] = 0;
-    
+    if (!isset($info['nodes'][$nid]['parent']) || $info['nodes'][$nid]['parent'] < 0) {
+      $info['nodes'][$nid]['parent'] = 0;
+    }
+
     // Determine hierarchy depth of current row.
     $depth = _draggableviews_get_hierarchy_depth($nid, $info['nodes'], $info);
 
@@ -705,7 +714,14 @@ function _draggableviews_calculate_depths(&$info) {
     $info['nodes'][$nid]['depth'] = $depth;
 
     // Move the order value to the calculated level.
-    $info['nodes'][$nid]['order'][$depth] = $info['nodes'][$nid]['order'][0];
+    if ($info['nodes'][$nid]['order'][0] > DRAGGABLEVIEWS_MIN_VALUE) {
+      $info['nodes'][$nid]['order'][$depth] = $info['nodes'][$nid]['order'][0];
+    }
+    else {
+      // The order value must be greater than the minimum value. Otherwise
+      // children would appear above their parents.
+      $info['nodes'][$nid]['order'][$depth] = DRAGGABLEVIEWS_MIN_VALUE + 1;
+    }
 
     // Set the next level to the minimum value. Otherwise
     // it could happen that a child appears above its parent.
@@ -865,6 +881,7 @@ function _draggableviews_init_handler($field, &$view) {
     $handler_info = draggableviews_discover_handlers($field['handler']);
     $file         = $handler_info['path'] .'/'. $handler_info['file'];
     if ($handler_info['path'] && $handler_info['file'] && file_exists($file)) {
+      module_load_include('inc', 'draggableviews', 'implementations/draggableviews_handler');
       require_once($file);
       $handler = new $handler_info['handler'];
       $handler->init($field['field'], $view);
@@ -903,9 +920,10 @@ function _draggableviews_compare_nodes($node1, $node2) {
   // The first difference will be significant. If they equal in each level we
   // "survive" the loop and end up with return 0.
   for ($i = 0; $i < count($node1['order']); $i++) {
-    // First compare the order values..
-    if ($node1['order'][$i] < $node2['order'][$i]) return -1;
-    if ($node1['order'][$i] > $node2['order'][$i]) return 1;
+    if (isset($node1['order'][$i]) && isset($node2['order'][$i])) {
+      if ($node1['order'][$i] < $node2['order'][$i]) return -1;
+      if ($node1['order'][$i] > $node2['order'][$i]) return 1;
+    }
   }
   return 0;
 }

@@ -380,6 +380,8 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
 
   $draggableviews_depth_limit = drupal_render($form['draggableviews_depth_limit']);
 
+  $draggableviews_repair = drupal_render($form['draggableviews_repair']);
+
   // build types table
   $tabledrag_types_rows = array();
   foreach (element_children($form['tabledrag_types']) AS $id) {
@@ -402,8 +404,6 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
 
   $draggableviews_default_on_top = drupal_render($form['draggableviews_default_on_top']);
 
-  $draggableviews_arguments = drupal_render($form['draggableviews_arguments']);
-
   // Let extension modules append to the output
   $extensions = array();
   foreach (module_implements('draggableviews_style_plugin_render') as $module) {
@@ -420,8 +420,8 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   // Append order settings.
   $output .= $tabledrag_header;
   $output .= $description_tabledrag;
-  $output .= $description_order;
   $output .= theme('table', array('&nbsp;', t('Field'), t('Handler')), array($tabledrag_order_columns));
+  $output .= $description_order;
   $output .= $tabledrag_order_visible;
   // Append hierarchy settings.
   $output .= theme('table', array('&nbsp;', t('Field'), t('Handler')), array($tabledrag_hierarchy_columns));
@@ -429,24 +429,24 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   $output .= $tabledrag_hierarchy_visible;
   // Append depth limit textfield to output.
   $output .= $draggableviews_depth_limit;
+  // Append structure options.
+  $output .= $draggableviews_repair;
   if (strcmp($form['#base_table'], 'node') == 0) {
     // Append tabledrag types settings.
-    $output .= $description_types;
     $output .= theme('table', array(t('Node type'), t('Type'), '&nbsp;'), $tabledrag_types_rows);
     $output .= $tabledrag_types_add;
+    $output .= $description_types;
   }
   // Append expand yes/no checkbox to output.
   $output .= $tabledrag_expand;
   // Append page extensions output.
-  $output .= $description_extensions;
   $output .= $draggableviews_extensions;
+  $output .= $description_extensions;
   // Append lock output.
-  $output .= $description_tabledrag_lock;
   $output .= $tabledrag_lock;
+  $output .= $description_tabledrag_lock;
   // Append default behaviour radios.
   $output .= $draggableviews_default_on_top;
-  // Append argument checkbox.
-  $output .= $draggableviews_arguments;
   // append extension modules output
   $output .= implode('', $extensions);
 

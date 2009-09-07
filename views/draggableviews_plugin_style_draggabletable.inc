@@ -148,7 +148,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['tabledrag_header'] = array(
       '#prefix' => '<div style="background: #F6F6F6; border-top: 1px solid #D6DBDE; font-weight: bold; padding: 1em 1em 0;">',
       '#suffix' => '</div>',
-      '#value' => t('@display: Style options: Draggable Table Settings:', array('@display' => $this->display->display_title)),
+      '#value' => t('@display: Style options: Draggable Table Settings', array('@display' => $this->display->display_title)),
     );
     $form['tabledrag_description'] = array(
       '#prefix' => '<div class="description form-item">',
@@ -158,7 +158,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['tabledrag_description_order'] = array(
       '#prefix' => '<div class="description form-item">',
       '#suffix' => '</div>',
-      '#value' => t('In order to make rows of a table draggable the order field must be specified. To use hierarchies you must set the parent field.'),
+      '#value' => t('In order to make rows of a table draggable the order field must be specified.'),
     );
     $form['tabledrag_description_hierarchy'] = array(
       '#prefix' => '<div class="description form-item">',
@@ -168,7 +168,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['tabledrag_description_types'] = array(
       '#prefix' => '<div class="description form-item">',
       '#suffix' => '</div>',
-      '#value' => t('You can constrain the user when he drags rows.<br />Type "root" cannot be subordinated.<br />Type "leaf" cannot have child nodes.'),
+      '#value' => t('You can constrain the user when he drags rows. Type "root" cannot be subordinated. Type "leaf" cannot have child nodes.'),
     );
     $form['draggableviews_description_extensions'] = array(
       '#prefix' => '<div class="description form-item">',
@@ -178,7 +178,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['description_tabledrag_lock'] = array(
       '#prefix' => '<div class="description form-item">',
       '#suffix' => '</div>',
-      '#value' => t('If you don\'t wan\'t that the hierarchy can be changed use the following option.'),
+      '#value' => t('If you don\'t wan\'t that the hierarchy can be changed use this option.'),
     );
 
     $options = _draggableviews_filter_fields(array('number'), $handlers);
@@ -236,6 +236,15 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#description' => t('Only use this option in combination with hierarchies. Type -1 for no limit.'),
       '#title' => t('Define the depth limit'),
       '#default_value' => (isset($current['draggableviews_depth_limit']) && is_numeric($current['draggableviews_depth_limit'])) ? $current['draggableviews_depth_limit'] : -1,
+    );
+
+    // Lock option.
+    $form['draggableviews_repair'] = array(
+      '#type' => 'checkboxes',
+      '#options' => array('repair' => t('Repair broken structures.')),
+      '#description' => t('Uncheck this option if you don\'t want DraggableViews to repair broken structures.'),
+      '#title' => t('Structure'),
+      '#default_value' => isset($current['draggableviews_repair']) ? $current['draggableviews_repair'] : array('repair'),
     );
 
     if (strcmp($this->view->base_table, 'node') == 0) {
@@ -315,14 +324,6 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#default_value' => isset($current['draggableviews_default_on_top']) ? $current['draggableviews_default_on_top'] : 1,
       '#description' => t('Nodes without a numerical order value assigned will be treated as new nodes. Decide where they should appear by default.'),
       '#options' => array(t('On Bottom'), t('On Top')),
-    );
-
-    $form['draggableviews_arguments'] = array(
-      '#type' => 'checkboxes',
-      '#name' => 'draggableviews_arguments',
-      '#options' => array('use_args' => t('Use arguments as well as view ID to order nodes.')),
-      '#description' => t('If checked, nodes can be reordered for any set of views arguments.  Use with care: If you have many combinations of arguments, your database could become very large.'),
-      '#default_value' => isset($current['draggableviews_arguments']) ? $current['draggableviews_arguments'] : array(),
     );
 
     // Let extension modules alter the output
