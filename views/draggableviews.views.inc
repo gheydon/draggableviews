@@ -112,6 +112,40 @@ function draggableviews_views_data() {
 }
 
 function draggableviews_views_query_alter(&$view, &$query) {
+  $exists = FALSE;
+  for ($i = 0; $i < 2; $i++) {
+    if (isset($query->table_queue['draggableviews_structure_'. $view->base_table . $i])) {
+      $exists = TRUE;
+    }
+  }
+  if (!$exists) {
+    // No "DraggableViews: Order/Parent" fields available.
+    return;
+  }
+
+  // We look for a display of this view that uses arguments.
+  // If any of the displays uses arguments we'll use arguments for this display too, except the
+  // style plugin configuration of this display tells us explicitly something else.
+  $use_args = FALSE;
+  if (isset($view->style_plugin->options['draggableviews_arguments']['use_args'])) {
+    $use_args = !empty($view->style_plugin->options['draggableviews_arguments']['use_args']);
+  }
+  else {
+    foreach ($view->display AS $display_id => $display) {
+      if (isset($display->display_options['style_plugin'])) {
+        $display_options = $display->display_options;
+        // We don't care about the fact that displays probably don't contain
+        // all their information because of inheritance of the default display.
+        // We'll check the default display anyway.
+        if ($display_options['style_plugin'] == 'draggabletable') {
+          if (!empty($display_options['style_options']['draggableviews_arguments']['use_args'])) {
+            $use_args = TRUE;
+          }
+        }
+      }
+    }
+  }
+
   for ($i = 0; $i < 2; $i++) {
     if (isset($query->table_queue['draggableviews_structure_'. $view->base_table . $i])) {
       $query->table_queue['draggableviews_structure_'. $view->base_table . $i]['join']->extra[] = array(
@@ -120,7 +154,7 @@ function draggableviews_views_query_alter(&$view, &$query) {
         'value' => $view->name,
       );
       $args = NULL;
-      if (!empty($view->style_plugin->options['draggableviews_arguments']['use_args'])) {
+      if ($use_args) {
         if (!empty($view->args)) {
           $args = implode('/', $view->args);
         }
