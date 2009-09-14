@@ -9,7 +9,7 @@
 /*
  * Default Implementation with CCK-fields
  */
-class draggableviews_handler_cck {
+class draggableviews_handler_cck extends draggableviews_handler {
   function init($field_name, &$view) {
     parent::init($field_name, &$view);
 
