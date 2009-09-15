@@ -89,7 +89,7 @@ function draggableviews_book_draggableviews_style_plugin_form_alter(&$form, $for
   $form['draggableviews_book_filter'] = array(
     '#type' => 'select',
     '#options' => $filters,
-    '#default_value' => isset($current['draggableviews_book_filter']) ? $current['draggableviews_book_filter'] : key($filter),
+    '#default_value' => isset($current['draggableviews_book_filter']) ? $current['draggableviews_book_filter'] : key($filters),
   );
 }
 
