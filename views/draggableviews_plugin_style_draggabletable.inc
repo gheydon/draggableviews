@@ -102,13 +102,17 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     // inherit options from style_table
     parent::options_form($form, $form_state);
 
+    // Get field handlers.
+    $handlers = $this->display->handler->get_handlers('field');
+
+    if (empty($handlers)) {
+      // Can't do anything without fields.
+      return;
+    }
+
     // set theme handler
     // theme function is registered in *.module file
     $form['#theme'] = 'draggableviews_ui_style_plugin_draggabletable';
-
-    // get field handler
-    $handlers = $this->display->handler->get_handlers('field');
-
 
     // DRAGGABLE VIEW OPTIONS
     //
