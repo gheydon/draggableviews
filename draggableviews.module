@@ -120,6 +120,7 @@ function draggableviews_view_draggabletable_form($form_state, &$style_plugin) {
     }
   }
   $form['#redirect'] = array('path' => $_GET['q'], 'query' => $query);
+  $form['#theme'] = 'draggableviews_view_draggabletable_form';
 
   $info = &$view->draggableviews_info;
 
@@ -175,23 +176,13 @@ function draggableviews_theme() {
   );
 
   // Register theme function for all views.
-  $views = views_get_all_views();
-  foreach ($views AS $view) {
-    $view->init_display();
-    foreach ($view->display AS $display_id => $display) {
-      if (isset($display->handler->get_plugin('style')->definition['handler'])) {
-        if ($display->handler->get_plugin('style')->definition['handler'] == 'draggableviews_plugin_style_draggabletable') {
-          $array['draggableviews_view_draggabletable_form_'. $view->name .'_'. $display_id] = array(
-            'template' => 'draggableviews-view-draggabletable-form',
-            'preprocess functions' => array(
-              'template_preprocess_draggableviews_view_draggabletable_form',
-            ),
-            'arguments' => array('form' => NULL),
-          );
-        }
-      }
-    }
-  }
+  $array['draggableviews_view_draggabletable_form'] = array(
+    'template' => 'draggableviews-view-draggabletable-form',
+    'preprocess functions' => array(
+      'template_preprocess_draggableviews_view_draggabletable_form',
+    ),
+    'arguments' => array('form' => NULL),
+  );
   return $array;
 }
 
@@ -216,14 +207,14 @@ function draggableviews_views_pre_execute(&$view) {
   // Get info array.
   $info = _draggableviews_info($view);
 
-  // Attach the info array to the view object.
-  // We need to use a reference because the info array will change.
-  $view->draggableviews_info = &$info;
-
   if (!isset($info['order'])) {
     // Nothing to do.
     return;
   }
+
+  // Attach the info array to the view object.
+  // We need to use a reference because the info array will change.
+  $view->draggableviews_info = &$info;
 
   // We want the view to execute the count query. New nodes which should be added to the very end will use this value.
   $view->get_total_rows = TRUE;
@@ -294,9 +285,6 @@ function draggableviews_views_pre_render(&$view) {
     return;
   }
 
-  // Make sure the theme we need is loaded.
-  _draggableviews_ensure_theme('draggableviews_view_draggabletable_form_'. $view->name .'_'. $view->style_plugin->display->id);
-
   // Initialize info array with the results of the executed view object.
   $view->draggableviews_info = _draggableviews_info($view, $view->draggableviews_info);
   $info = &$view->draggableviews_info;
@@ -366,22 +354,6 @@ function draggableviews_views_pre_render(&$view) {
 
   // Finally we set the selectable options of the order field.
   $info['order']['field']['handler']->set_range($range['first_index'], $range['last_index']);
-}
-
-/**
- * Ensure that the theme $theme_name is loaded in the registry.
- * @param $theme_name
- */
-function _draggableviews_ensure_theme($theme_name) {
-  init_theme();
-  $theme_registry = theme_get_registry();
-  if (!isset($theme_registry[$theme_name])) {
-    // The theme we need is not registered.
-    // We clear the theme_registry cache and cause the theme registry to be rebuilt.
-    drupal_rebuild_theme_registry();
-    unset($GLOBALS['theme']);
-    init_theme();
-  }
 }
 
 /**
