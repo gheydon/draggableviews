@@ -61,7 +61,7 @@ function draggableviews_book_draggableviews_style_plugin_form_alter(&$form, $for
 
   $filters = array();
   foreach ($style_plugin->view->get_items('filter', $style_plugin->display->id) AS $filter_id => $settings) {
-    $filters[$filter_id] = $settings['table'] .'.'. $settings['field'] .': '. $arg_id;
+    $filters[$filter_id] = $settings['table'] .'.'. $settings['field'] .': '. $filter_id;
   }
   if(empty($filters)) {
     $filters = array('none' => t('- None -'));
