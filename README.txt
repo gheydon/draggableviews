@@ -12,5 +12,3 @@ Quick install:
  5) Set the Order Field from 2) and choose "Native" handler.
     Click Update button.
  6) Save the view and you're done.
-
-The view will probably not be shown properly in preview mode!
