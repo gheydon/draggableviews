@@ -11,7 +11,7 @@
  */
 class draggableviews_handler_taxonomy extends draggableviews_handler {
   function init($field_name, &$view) {
-    parent::init($field_name, &$view);
+    parent::init($field_name, $view);
   }
 
   function save($tid, $value) {

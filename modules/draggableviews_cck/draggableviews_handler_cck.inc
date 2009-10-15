@@ -11,7 +11,7 @@
  */
 class draggableviews_handler_cck extends draggableviews_handler {
   function init($field_name, &$view) {
-    parent::init($field_name, &$view);
+    parent::init($field_name, $view);
 
     $this->options         = $view->display['default']->display_options['style_options'];
     $this->fields          = $view->field;

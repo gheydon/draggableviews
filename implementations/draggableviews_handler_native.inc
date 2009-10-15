@@ -11,7 +11,7 @@
  */
 class draggableviews_handler_native extends draggableviews_handler {
   function init($field_name, &$view) {
-    parent::init($field_name, &$view);
+    parent::init($field_name, $view);
     $this->delta = $this->view->field[$field_name]->definition['draggableviews_delta'];
   }
 

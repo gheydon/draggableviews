@@ -11,7 +11,7 @@
  */
 class draggableviews_handler_book extends draggableviews_handler {
   function init($field_name, &$view) {
-    parent::init($field_name, &$view);
+    parent::init($field_name, $view);
 
     $this->root = 0;
     // Check if filters or arguments define another root parent.
