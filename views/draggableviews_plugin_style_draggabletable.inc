@@ -92,6 +92,12 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       $errors[] = t('Display "@display": Draggableviews: Number rows of previous page must be a numeric value >= 0.', array('@display' => $this->display->display_title));
     }
 
+    // Check depth limit.
+    $button_text = $this->options['draggableviews_button_text'];
+    if (!(isset($button_text) && strlen($button_text) > 0)) {
+      $errors[] = t('Display "@display": Draggableviews: Button text must be a valid string.', array('@display' => $this->display->display_title));
+    }
+
     return $errors;
   }
 
@@ -328,6 +334,14 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       '#default_value' => isset($current['draggableviews_default_on_top']) ? $current['draggableviews_default_on_top'] : 1,
       '#description' => t('Nodes without a numerical order value assigned will be treated as new nodes. Decide where they should appear by default.'),
       '#options' => array(t('On Bottom'), t('On Top')),
+    );
+
+    $form['draggableviews_button_text'] = array(
+      '#type' => 'textfield',
+      '#size' => 20,
+      '#title' => t('The label of the save button'),
+      '#description' => t('Make the workflow more intuitive for the user.'),
+      '#default_value' => isset($current['draggableviews_button_text']) ? $current['draggableviews_button_text'] : t('Save order'),
     );
 
     // Let extension modules alter the output

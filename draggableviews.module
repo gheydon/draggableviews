@@ -91,10 +91,11 @@ function draggableviews_forms() {
  */
 function draggableviews_view_draggabletable_form($form_state, &$style_plugin) {
   $view = $style_plugin->view;
+  $options = $view->style_plugin->options;
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Save'),
+    '#value' => t(isset($options['draggableviews_button_text']) ? $options['draggableviews_button_text'] : t('Save order')),
   );
   $form['#submit'][] = 'draggableviews_view_draggabletable_form_submit';
   // Use pager information and all exposed input data to build the query.
