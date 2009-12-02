@@ -329,7 +329,7 @@ function draggableviews_views_pre_render(&$view) {
       $range = _draggableviews_extend_view_window($info, TRUE);
 
       if (drupal_strlen(variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.')) > 0) {
-        drupal_set_message(variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.'));
+        drupal_set_message(filter_xss(variable_get('draggableviews_repaired_msg', 'The structure was broken. It has been repaired.')));
       }
     }
   }
