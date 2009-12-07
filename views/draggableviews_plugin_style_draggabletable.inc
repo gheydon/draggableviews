@@ -92,9 +92,8 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
       $errors[] = t('Display "@display": Draggableviews: Number rows of previous page must be a numeric value >= 0.', array('@display' => $this->display->display_title));
     }
 
-    // Check depth limit.
-    $button_text = $this->options['draggableviews_button_text'];
-    if (!(isset($button_text) && strlen($button_text) > 0)) {
+    // Check button text.
+    if (!(isset($this->options['draggableviews_button_text']) && strlen($this->options['draggableviews_button_text']) > 0)) {
       $errors[] = t('Display "@display": Draggableviews: Button text must be a valid string.', array('@display' => $this->display->display_title));
     }
 
