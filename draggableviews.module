@@ -218,6 +218,7 @@ function draggableviews_views_pre_execute(&$view) {
   $view->draggableviews_info = &$info;
 
   // We want the view to execute the count query. New nodes which should be added to the very end will use this value.
+  // @todo: Deprecated: If paging is not used the count query will not be executed anyway. the $view->total_rows property is not needed anymore. It has been replaced with 999999999999.
   $view->get_total_rows = TRUE;
 
   $info['pager'] = $info['view']->pager;
@@ -250,19 +251,20 @@ function draggableviews_views_pre_execute(&$view) {
       // even if the user doesn't have permissions.
     }
     else {
+      // We just extend the visible window.
+      $first_index  = ($info['pager']['current_page'] * $info['pager']['items_per_page']);
+      $last_index   = $first_index + $info['pager']['items_per_page'] - 1;
+
       // When we deal with simple lists permission checks must be done right now (differently to hierarchies).
       if (user_access('Allow Reordering') && !$info['locked']) {
-        // We just extend the visible window.
-        $first_index  = ($info['pager']['current_page'] * $info['pager']['items_per_page']);
-        $last_index   = $first_index + $info['pager']['items_per_page'] - 1;
         // Add extensions.
         $first_index -= $info['view_window_extensions']['extension_top'];
         $last_index  += $info['view_window_extensions']['extension_bottom'];
         if ($first_index < 0) $first_index = 0;
-
-        $info['view']->pager['items_per_page'] = $last_index - $first_index + 1;
-        $info['view']->pager['offset']         = $first_index + $info['pager']['offset'];
       }
+
+      $info['view']->pager['items_per_page'] = $last_index - $first_index + 1;
+      $info['view']->pager['offset']         = $first_index + $info['pager']['offset'];
     }
   }
 }
