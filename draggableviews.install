@@ -99,6 +99,7 @@ function draggableviews_install() {
  */
 function draggableviews_uninstall() {
   drupal_uninstall_schema('draggableviews');
+  variable_del('draggableviews_repaired_msg');
 }
 
 /**
