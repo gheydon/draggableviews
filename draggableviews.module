@@ -511,7 +511,7 @@ function draggableviews_perm() {
  */
 function draggableviews_draggableviews_style_plugin_form_alter(&$form, $form_state, $style_plugin) {
   // Check for input.
-  if (count($form_state['input']) > 0) {
+  if (!empty($input['style_options'])) {
     // Define the input data as the current data.
     $current = $form_state['input']['style_options'];
   }

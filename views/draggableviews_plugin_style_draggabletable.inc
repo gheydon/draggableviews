@@ -143,7 +143,7 @@ class draggableviews_plugin_style_draggabletable extends views_plugin_style_tabl
     $form['draggableviews_extensions'] = array();
 
     // Check for input.
-    if (count($input) > 0) {
+    if (!empty($input['style_options'])) {
       // Define the input data as the current data.
       $current = $form_state['input']['style_options'];
     }
