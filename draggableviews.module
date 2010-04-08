@@ -89,7 +89,7 @@ function draggableviews_forms() {
 /**
  * Build the form
  */
-function draggableviews_view_draggabletable_form($form_state, &$style_plugin) {
+function draggableviews_view_draggabletable_form($form_state, $style_plugin) {
   $view = $style_plugin->view;
   $options = $view->style_plugin->options;
 
