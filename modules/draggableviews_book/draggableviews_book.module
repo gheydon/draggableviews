@@ -363,7 +363,8 @@ function draggableviews_book_views_default_views() {
     ),
   ));
   $handler->override_option('access', array(
-    'type' => 'none',
+    'type' => 'perm',
+    'perm' => 'Allow Reordering',
   ));
   $handler->override_option('cache', array(
     'type' => 'none',
@@ -444,6 +445,7 @@ function draggableviews_book_views_default_views() {
       'lock' => 0,
     ),
     'draggableviews_default_on_top' => '1',
+    'draggableviews_button_text' => 'Save order',
     'draggableviews_arguments' => array(
       'use_args' => 0,
     ),
