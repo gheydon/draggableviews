@@ -32,7 +32,7 @@ Drupal.behaviors.draggableviewsLoad = function() {
     });
 
     // collapse all by default if set
-    if( Drupal.settings.draggableviews.expand_default && Drupal.settings.draggableviews[table_id].expand_default == 1 ) {
+    if( Drupal.settings.draggableviews[table_id].expand_default && Drupal.settings.draggableviews[table_id].expand_default == 1 ) {
       draggableviews_collapse_all(table_id);
     }
   });
@@ -96,7 +96,7 @@ function draggableviews_hide(parent_id, table_id) {
 
 function draggableviews_collapse_all(table_id) {
   // hide elements
-  $("#" + table_id + " tr:has(td ." + Drupal.settings.draggableviews[table_id].parent + "[value<>0])").each( function (i) {
+  $("#" + table_id + " tr:has(td ." + Drupal.settings.draggableviews[table_id].parent + "[value!=0])").each( function (i) {
     $(this).hide();
   });
   
@@ -108,7 +108,7 @@ function draggableviews_collapse_all(table_id) {
       // set new action and class
       $(this).unbind('click');
       $(this).attr('class', 'draggableviews-collapse');
-      $(this).bind('click', function() { draggableviews_expand(parent_id, table_id); });
+      $(this).bind('click', function() { draggableviews_expand(parent_id, table_id, true); });
       
       // set collapsed/expanded state
       draggableviews_set_state_field(parent_id, table_id, true);
