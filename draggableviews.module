@@ -556,3 +556,13 @@ function draggableviews_views_api() {
     'path' => drupal_get_path('module', 'draggableviews') .'/views',
   );
 }
+
+/**
+ * Implementing hook_nodeapi
+ */
+function draggableviews_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  // Remove nodes from the structure if they are deleted.
+  if ($op == 'delete') {
+    db_query('DELETE FROM {draggableviews_structure} WHERE nid = %d', $node->nid);
+  }
+}
