@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Argument that refers to a certain book page.

@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file
  * Provide special views data and handlers for book.module

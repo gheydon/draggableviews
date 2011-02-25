@@ -1,4 +1,3 @@
-; $Id$
 name = DraggableViews CCK handler
 description = Provides CCK support for both order fields and parent fields.
 dependencies[] = draggableviews

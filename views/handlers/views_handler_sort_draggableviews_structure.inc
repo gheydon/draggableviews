@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file
  * Draggableviews structure sort handler
