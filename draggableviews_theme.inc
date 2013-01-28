@@ -73,6 +73,11 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars, $style_p
       $vars['fields'][$field] .= ' active';
     }
 
+    // Add a CSS align class to each field if one was set
+    if (!empty($options['info'][$field]['align'])) {
+      $vars['fields'][$field] .= ' ' . views_css_safe($options['info'][$field]['align']);
+    }
+
     // Render each field into its appropriate column.
     foreach ($result as $num => $row) {
       if (!empty($fields[$field]) && empty($fields[$field]->options['exclude'])) {
@@ -320,6 +325,7 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
 
   $header = array(
     t('Field'),
+    t('Justification'),
     t('Column'),
     t('Separator'),
     array(
@@ -331,6 +337,7 @@ function theme_draggableviews_ui_style_plugin_draggabletable($form) {
   foreach (element_children($form['columns']) as $id) {
     $row = array();
     $row[] = drupal_render($form['info'][$id]['name']);
+    $row[] = drupal_render($form['info'][$id]['align']);
     $row[] = drupal_render($form['columns'][$id]);
     $row[] = drupal_render($form['info'][$id]['separator']);
     if (!empty($form['info'][$id]['sortable'])) {
