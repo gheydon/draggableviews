@@ -290,7 +290,7 @@ function template_preprocess_draggableviews_view_draggabletable(&$vars, $style_p
   drupal_add_css(drupal_get_path('module', 'draggableviews') .'/styles.css');
 }
 
-function template_preprocess_draggableviews_view_draggabletable_form($vars) {
+function template_preprocess_draggableviews_view_draggabletable_form(&$vars) {
   // Get style plugin.
   $style_plugin = $vars['form']['#parameters'][2];
   // Get structured info array.
