@@ -1,6 +1,7 @@
 name: DraggableViews
 type: module
-description: Complete rewrite of D7 draggableviews
+description: Makes views draggable
 core: 8.x
 dependencies:
   - views
+package: Views
