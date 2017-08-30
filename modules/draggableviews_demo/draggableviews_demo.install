@@ -1,0 +1,14 @@
+<?php
+use Drupal\node\Entity\Node;
+
+/**
+ * @file
+ * Install, update and uninstall functions for the draggableviews demo module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function draggableviews_demo_uninstall() {
+  // TODO: Remove content type and nodes of 'draggableviews_demo'.
+}
