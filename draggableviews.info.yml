@@ -4,4 +4,6 @@ description: Makes views draggable
 core: 8.x
 dependencies:
   - views
+test_dependencies:
+  - draggableviews:draggablviews_demo
 package: Views

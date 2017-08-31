@@ -1,9 +1,9 @@
 langcode: en
 status: true
 dependencies:
-  module:
-    - menu_ui
-    - draggableviews
+  enforced:
+    module:
+      - draggableviews_demo
 third_party_settings:
   menu_ui:
     available_menus:
