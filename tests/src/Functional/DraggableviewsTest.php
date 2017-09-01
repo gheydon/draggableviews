@@ -39,7 +39,7 @@ class DraggableviewsTest extends BrowserTestBase {
       'administer permissions',
       'administer nodes',
       'administer content types',
-	  'access draggableviews',
+      'access draggableviews',
     ]);
     $this->authUser = $this->drupalCreateUser([], 'authuser');
 
@@ -51,10 +51,6 @@ class DraggableviewsTest extends BrowserTestBase {
       $node = $this->drupalCreateNode([
         'type' => 'draggableviews_demo',
         'title' => $datumContent[0],
-        'body' => [
-          'format' => filter_default_format($this->authUser),
-          'value' => $datumContent[1]
-        ]
       ]);
       $node->save();
     }
@@ -96,22 +92,27 @@ class DraggableviewsTest extends BrowserTestBase {
    * A simple test.
    */
   public function testDraggableviewsContent() {
-	$assert_session = $this->assertSession();
+    $assert_session = $this->assertSession();
 	
-	$this->drupalGet('draggableviews-demo');
+    $this->drupalGet('draggableviews-demo');
     $this->assertSession()->statusCodeEquals(200);
-	// Verify that anonymous useres cannot access the order page.
-	$this->drupalGet('draggableviews-demo/order');
+    // Verify that anonymous useres cannot access the order page.
+    $this->drupalGet('draggableviews-demo/order');
     $this->assertSession()->statusCodeEquals(403);
 	
-	// Verify that authorized user has access to display and order page.
+    // Verify that authorized user has access to display page.
     $this->drupalLogin($this->adminUser);
     $this->drupalGet('draggableviews-demo');
     $this->assertSession()->statusCodeEquals(200);
+
+    // Verify that the page contains generated content.
+    $assert_session->pageTextContains(t('Draggable Content 4'));
+
+    // Verify that authorized user has access to order page.
     $this->drupalGet('draggableviews-demo/order');
     $this->assertSession()->statusCodeEquals(200);
 	
-	// Verify that the page contains generated content.
-	// $assert_session->pageTextContains(t('Draggable Content 5'));
+    // Verify that the page contains generated content.
+    $assert_session->pageTextContains(t('Draggable Content 5'));
   }
 }
