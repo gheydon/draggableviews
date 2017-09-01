@@ -10,7 +10,7 @@ third_party_settings:
       - main
     parent: 'main:'
 name: 'Draggableviews Demo'
-type: draggablviews_demo
+type: draggableviews_demo
 description: ''
 help: ''
 new_revision: true

@@ -254,7 +254,7 @@ display:
           admin_label: ''
           operator: in
           value:
-            draggablviews_demo: draggablviews_demo
+            draggableviews_demo: draggableviews_demo
           group: 1
           exposed: false
           expose:
