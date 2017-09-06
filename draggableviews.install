@@ -10,7 +10,7 @@
  */
 function draggableviews_schema() {
   $schema['draggableviews_structure'] = array(
-    'description' => 'Table that contains logs of all system events.',
+    'description' => 'Saves the order settings of a draggableview view.',
     'fields' => array(
       'dvid' => array(
         'type' => 'serial',

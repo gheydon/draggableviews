@@ -22,16 +22,26 @@ class DraggableViewsField extends BulkForm {
   /**
    * {@inheritdoc}
    */
-  protected function defineOptions() {
-    $options = parent::defineOptions();
-    return $options;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
+    $form['draggableview_help'] = [
+      '#markup' => $this->t("A draggable element will be added to the first table column. You do not have to set this field as the first column in your View."),
+    ];
     parent::buildOptionsForm($form, $form_state);
+    // Remove all the fields that would break this or are completely ignored
+    // when rendering the drag interface.
+    unset($form['custom_label']);
+    unset($form['label']);
+    unset($form['element_label_colon']);
+    unset($form['action_title']);
+    unset($form['include_exclude']);
+    unset($form['selected_actions']);
+    unset($form['exclude']);
+    unset($form['alter']);
+    unset($form['empty_field_behavior']);
+    unset($form['empty']);
+    unset($form['empty_zero']);
+    unset($form['hide_empty']);
+    unset($form['hide_alter_empty']);
   }
 
   /**
@@ -78,13 +88,12 @@ class DraggableViewsField extends BulkForm {
       $options = [
         'table_id' => $draggableviews->getHtmlId(),
         'action' => 'match',
-        'relationship' => 'parent',
+        'relationship' => 'group',
         'group' => 'draggableviews-parent',
         'subgroup' => 'draggableviews-parent',
-        'source' => 'draggableviews-id'
+        'source' => 'draggableviews-id',
       ];
       drupal_attach_tabledrag($form, $options);
     }
   }
-
 }
