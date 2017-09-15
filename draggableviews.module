@@ -9,56 +9,56 @@
  * Implements hook_views_data_alter().
  */
 function draggableviews_views_data_alter(&$data) {
-  $data['draggableviews_structure']['weight'] = array(
+  $data['draggableviews_structure']['weight'] = [
     'title' => t('DraggableViews Weight'),
     'group' => t('Global'),
     'help' => t('Display the weight value.'),
-    'field' => array(
+    'field' => [
       'id' => 'numeric',
-    ),
-    'sort' => array(
+    ],
+    'sort' => [
       'id' => 'standard',
-    ),
-    'filter' => array(
+    ],
+    'filter' => [
       'help' => t('Filter by the draggableviews weight value (Native handler only).'),
       'id' => 'numeric',
-    ),
-  );
-  $data['draggableviews_structure']['parent'] = array(
+    ],
+  ];
+  $data['draggableviews_structure']['parent'] = [
     'title' => t('Parent'),
     'help' => t('The parent entity id.'),
     'group' => t('Draggableviews'),
-    'field' => array(
+    'field' => [
       'id' => 'numeric',
-    ),
-    'filter' => array(
+    ],
+    'filter' => [
       'help' => t('Filter by the draggableviews parent\'s entity id (Native handler only).'),
       'id' => 'numeric',
-    ),
-  );
+    ],
+  ];
 
   foreach (\Drupal::entityManager()->getDefinitions() as $entity_type_id => $entity_type) {
     $base_table = $entity_type->getDataTable() ?: $entity_type->getBaseTable();
     $entity_keys = $entity_type->getKeys();
     if ($base_table && isset($data[$base_table]['table'])) {
-      $data[$base_table]['draggableviews'] = array(
+      $data[$base_table]['draggableviews'] = [
         'title' => $data[$base_table]['table']['group'],
         'group' => t('Draggableviews'),
         'help' => t('Provide a draggable functionality.'),
         'entity field' => $entity_keys['id'],
-        'field' => array(
+        'field' => [
           'id' => 'draggable_views_field',
           'click sortable' => FALSE,
-        ),
-      );
+        ],
+      ];
       // Explain to every entity how to join with draggableviews structure table.
-      $data['draggableviews_structure']['table']['join'][$base_table] = array(
+      $data['draggableviews_structure']['table']['join'][$base_table] = [
         'handler' => 'draggableviews_join_handler',
         // Because this is a direct link it could be left out.
         'left_table' => $base_table,
         'left_field' => $entity_keys['id'],
         'field' => 'entity_id',
-      );
+      ];
     }
   }
 }
@@ -114,10 +114,10 @@ function draggableviews_form_alter(&$form, \Drupal\Core\Form\FormStateInterface 
 
   if (\Drupal::currentUser()->hasPermission('access draggableviews')) {
     // Create draggableviews save order button.
-    $form['actions']['save_order'] = array(
+    $form['actions']['save_order'] = [
       '#value' => t('Save order'),
       '#type' => 'submit',
-    );
+    ];
   }
 
   // If there is no results remove the save-order button.

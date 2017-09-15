@@ -50,7 +50,7 @@ class DraggableViews extends DestinationBase {
       'parent' => $row->getDestinationProperty('parent'),
     ];
     $result = Database::getConnection()->insert('draggableviews_structure')->fields($record)->execute();
-    return array($result);
+    return [$result];
   }
 
   /**
