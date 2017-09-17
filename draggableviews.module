@@ -37,7 +37,7 @@ function draggableviews_views_data_alter(&$data) {
     ],
   ];
 
-  foreach (\Drupal::entityManager()->getDefinitions() as $entity_type_id => $entity_type) {
+  foreach (\Drupal::entityTypeManager()->getDefinitions() as $entity_type_id => $entity_type) {
     $base_table = $entity_type->getDataTable() ?: $entity_type->getBaseTable();
     $entity_keys = $entity_type->getKeys();
     if ($base_table && isset($data[$base_table]['table'])) {
