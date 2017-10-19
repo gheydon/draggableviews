@@ -67,7 +67,7 @@ class DraggableViewsField extends BulkForm {
       // Item to keep id of the entity.
       $form[$this->options['id']][$row_index]['id'] = [
         '#type' => 'hidden',
-        '#value' => $row->{$this->definition['entity field']},
+        '#value' => $this->getEntity($row)->id(),
         '#attributes' => ['class' => ['draggableviews-id']],
       ];
 
