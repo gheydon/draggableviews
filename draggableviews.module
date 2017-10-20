@@ -16,7 +16,7 @@ use Drupal\Core\Cache\Cache;
 function draggableviews_views_data_alter(&$data) {
   $data['draggableviews_structure']['weight'] = [
     'title' => t('DraggableViews Weight'),
-    'group' => t('Global'),
+    'group' => t('Draggableviews'),
     'help' => t('Display the weight value.'),
     'field' => [
       'id' => 'numeric',
@@ -26,6 +26,9 @@ function draggableviews_views_data_alter(&$data) {
     ],
     'filter' => [
       'help' => t('Filter by the draggableviews weight value (Native handler only).'),
+      'id' => 'numeric',
+    ],
+    'argument' => [
       'id' => 'numeric',
     ],
   ];
@@ -38,6 +41,9 @@ function draggableviews_views_data_alter(&$data) {
     ],
     'filter' => [
       'help' => t("Filter by the draggableviews parent's entity id (Native handler only)."),
+      'id' => 'numeric',
+    ],
+    'argument' => [
       'id' => 'numeric',
     ],
   ];
