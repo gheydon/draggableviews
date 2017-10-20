@@ -22,7 +22,7 @@ function draggableviews_views_data_alter(&$data) {
       'id' => 'numeric',
     ],
     'sort' => [
-      'id' => 'draggableviews_sort',
+      'id' => 'standard',
     ],
     'filter' => [
       'help' => t('Filter by the draggableviews weight value (Native handler only).'),
