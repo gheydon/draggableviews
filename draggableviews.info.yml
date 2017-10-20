@@ -3,7 +3,7 @@ type: module
 description: 'Allows your views to be draggable and gives you the ability to set the order of how they appear.'
 core: 8.x
 dependencies:
-  - views
+  - drupal:views
 test_dependencies:
   - draggableviews:draggableviews_demo
 package: Views

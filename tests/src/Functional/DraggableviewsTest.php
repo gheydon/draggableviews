@@ -3,21 +3,24 @@
 namespace Drupal\Tests\draggableviews\Functional;
 
 use Drupal\Tests\BrowserTestBase;
-use Drupal\node\Entity\Node;
 
 /**
  * Tests sortability of Draggableviewws.
  *
  * @group draggableviews
  */
-
 class DraggableviewsTest extends BrowserTestBase {
   /**
    * Modules to enable.
    *
    * @var array
    */
-  public static $modules = ['node', 'views', 'draggableviews', 'draggableviews_demo'];
+  public static $modules = [
+    'node',
+    'views',
+    'draggableviews',
+    'draggableviews_demo',
+  ];
 
   /**
    * The installation profile to use with this test.
@@ -45,8 +48,8 @@ class DraggableviewsTest extends BrowserTestBase {
 
     // Gather the test data.
     $dataContent = $this->providerTestDataContent();
-    
-    // Create nodes. 
+
+    // Create nodes.
     foreach ($dataContent as $datumContent) {
       $node = $this->drupalCreateNode([
         'type' => 'draggableviews_demo',
@@ -57,12 +60,12 @@ class DraggableviewsTest extends BrowserTestBase {
   }
 
   /**
-   * Data provider for setUp
+   * Data provider for setUp.
    *
    * @return array
-   *  Nested array of testing data, Arranged like this:
-   *  - Title
-   *  - Body
+   *   Nested array of testing data, Arranged like this:
+   *   - Title
+   *   - Body
    */
   protected function providerTestDataContent() {
     return [
@@ -85,21 +88,22 @@ class DraggableviewsTest extends BrowserTestBase {
       [
         'Draggable Content 5',
         'Draggable Content Body 5',
-      ]
+      ],
     ];
   }
+
   /**
    * A simple test.
    */
   public function testDraggableviewsContent() {
     $assert_session = $this->assertSession();
-	
+
     $this->drupalGet('draggableviews-demo');
     $this->assertSession()->statusCodeEquals(200);
     // Verify that anonymous useres cannot access the order page.
     $this->drupalGet('draggableviews-demo/order');
     $this->assertSession()->statusCodeEquals(403);
-	
+
     // Verify that authorized user has access to display page.
     $this->drupalLogin($this->adminUser);
     $this->drupalGet('draggableviews-demo');
@@ -111,8 +115,9 @@ class DraggableviewsTest extends BrowserTestBase {
     // Verify that authorized user has access to order page.
     $this->drupalGet('draggableviews-demo/order');
     $this->assertSession()->statusCodeEquals(200);
-	
+
     // Verify that the page contains generated content.
     $assert_session->pageTextContains(t('Draggable Content 5'));
   }
+
 }

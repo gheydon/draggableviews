@@ -91,4 +91,5 @@ class DraggableViewsField extends BulkForm {
       drupal_attach_tabledrag($form, $options);
     }
   }
+
 }

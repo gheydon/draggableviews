@@ -1,10 +1,11 @@
 <?php
-use Drupal\node\Entity\Node;
 
 /**
  * @file
  * Install, update and uninstall functions for the draggableviews demo module.
  */
+
+use Drupal\node\Entity\Node;
 
 /**
  * Implements hook_uninstall().
