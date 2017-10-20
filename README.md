@@ -30,17 +30,22 @@ CONFIGURATION
     - Fill in the rest of the views information.
     - Click Save & edit button.
 3) Under the "FIELDS" section, do you see "Content: Title"?  If you do not:
-    - Click 'add' button at the "Fields" section and choose field "Content:title", add and apply.
+    - Click 'add' button at the "Fields" section and choose field
+    "Content:title", add and apply.
 4) Add the Draggableviews Field:
     - Click Add button at the "FIELDS" section.
-    - At the top of the overlay, Change "For: 'All displays'" to 'This block (override)'.
-      - If you do not do this then the field will be add to all displays and will prevent your
-        page display from using the block display to sort the order.
-5) Click Add button at the "SORT CRITERIA" section choose field "Draggableviews: Weight", add and choose sort asc, then apply.
-6) Under the "SORT CRITERIA" section, do you see "Content: Post date (asc)"?  If you do:
+    - At the top of the overlay, Change "For: 'All displays'" to 'This block
+     (override)'.
+      - If you do not do this then the field will be add to all displays and
+      will prevent your page display from using the block display to sort the
+      order.
+5) Click Add button at the "SORT CRITERIA" section choose field
+"Draggableviews: Weight", add and choose sort asc, then apply.
+6) Under the "SORT CRITERIA" section, do you see "Content: Post date (asc)"?
+ If you do:
     - Click on it.  At the bottom, click the 'Remove' button.
-      - An alternative is to rearrange the "SORT CRITERIA" order, making sure 'Draggableviews: Weight (asc)
-        appears first (or on top).
+      - An alternative is to rearrange the "SORT CRITERIA" order, making sure
+      'Draggableviews: Weight (asc) appears first (or on top).
 7) Save the view and you're done.
 *Things to confirm after you saved your new view.
 - In the Administrative Views UI, Go back to your View's 'page' display.
