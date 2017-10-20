@@ -6,6 +6,10 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\draggableviews\DraggableViews;
 use Drupal\system\Plugin\views\field\BulkForm;
 use Drupal\Core\Render\Markup;
+use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Session\AccountInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Defines a draggableviews form element.
@@ -13,6 +17,68 @@ use Drupal\Core\Render\Markup;
  * @ViewsField("draggable_views_field")
  */
 class DraggableViewsField extends BulkForm {
+
+  /**
+   * The entity manager.
+   *
+   * @var \Drupal\Core\Entity\EntityManagerInterface
+   */
+  protected $entityManager;
+
+  /**
+   * The action storage.
+   *
+   * @var \Drupal\Core\Entity\EntityStorageInterface
+   */
+  protected $actionStorage;
+
+  /**
+   * The language manager.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  protected $languageManager;
+  /**
+   * The Current user.
+   *
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $currentUser;
+
+  /**
+   * Constructs a new DraggableViewsField object.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin ID for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
+   *   The entity manager.
+   * @param \Drupal\Core\Language\LanguageManagerInterface $language_manager
+   *   The language manager.
+   * @param \Drupal\Core\Session\AccountInterface $current_user
+   *   Current user.
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityManagerInterface $entity_manager, LanguageManagerInterface $language_manager, AccountInterface $current_user) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $entity_manager, $language_manager);
+    $this->currentUser = $current_user;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('entity.manager'),
+      $container->get('language_manager'),
+      $container->get('current_user')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -79,7 +145,7 @@ class DraggableViewsField extends BulkForm {
       ];
     }
 
-    if (\Drupal::currentUser()->hasPermission('access draggableviews')) {
+    if ($this->currentUser->hasPermission('access draggableviews')) {
       $options = [
         'table_id' => $draggableviews->getHtmlId(),
         'action' => 'match',
