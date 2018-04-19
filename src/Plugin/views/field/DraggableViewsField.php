@@ -90,9 +90,6 @@ class DraggableViewsField extends BulkForm {
     parent::buildOptionsForm($form, $form_state);
     // Remove all the fields that would break this or are completely ignored
     // when rendering the drag interface.
-    unset($form['custom_label']);
-    unset($form['label']);
-    unset($form['element_label_colon']);
     unset($form['action_title']);
     unset($form['include_exclude']);
     unset($form['selected_actions']);
@@ -132,7 +129,7 @@ class DraggableViewsField extends BulkForm {
 
       // Item to keep id of the entity.
       $form[$this->options['id']][$row_index]['id'] = [
-        '#type' => 'hidden',
+        '#type' => 'weight',
         '#value' => $this->getEntity($row)->id(),
         '#attributes' => ['class' => ['draggableviews-id']],
       ];
